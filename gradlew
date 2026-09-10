@@ -12,7 +12,7 @@ if [ -f "$PROP_FILE" ]; then
     URL_LINE=$(grep -E '^distributionUrl=' "$PROP_FILE" | head -n 1)
     if [ -n "$URL_LINE" ]; then
         DISTRIBUTION_URL="${URL_LINE#distributionUrl=}"
-        DISTRIBUTION_URL="${DISTRIBUTION_URL//\\//}"
+        DISTRIBUTION_URL="${DISTRIBUTION_URL//\\/}"
     fi
 fi
 
