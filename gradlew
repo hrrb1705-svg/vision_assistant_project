@@ -22,17 +22,12 @@ DIST_ZIP_NAME="${DIST_NAME%.zip}"
 GRADLE_HOME_CACHE="$HOME/.gradle/wrapper/dists"
 EXTRACT_DIR="$GRADLE_HOME_CACHE/$DIST_ZIP_NAME"
 
-# 1) Prefer gradle from PATH
-if command -v gradle >/dev/null 2>&1; then
-    exec gradle "$@"
-fi
-
-# 2) Use previously extracted distribution
+# 1) Use previously extracted distribution
 if [ -x "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" ]; then
     exec "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" "$@"
 fi
 
-# 3) Download distribution (curl or wget) and extract
+# 2) Download distribution (curl or wget) and extract
 echo "Downloading Gradle distribution: $DISTRIBUTION_URL"
 mkdir -p "$EXTRACT_DIR"
 ZIP_PATH="$EXTRACT_DIR/$DIST_NAME"
