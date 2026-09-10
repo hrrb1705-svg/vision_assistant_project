@@ -18,13 +18,15 @@ fi
 
 DIST_NAME=$(basename "$DISTRIBUTION_URL")
 DIST_ZIP_NAME="${DIST_NAME%.zip}"
+GRADLE_INNER_DIR="${DIST_ZIP_NAME%-bin}"
+GRADLE_INNER_DIR="${GRADLE_INNER_DIR%-all}"
 
 GRADLE_HOME_CACHE="$HOME/.gradle/wrapper/dists"
 EXTRACT_DIR="$GRADLE_HOME_CACHE/$DIST_ZIP_NAME"
 
 # 1) Use previously extracted distribution
-if [ -x "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" ]; then
-    exec "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" "$@"
+if [ -x "$EXTRACT_DIR/$GRADLE_INNER_DIR/bin/gradle" ]; then
+    exec "$EXTRACT_DIR/$GRADLE_INNER_DIR/bin/gradle" "$@"
 fi
 
 # 2) Download distribution (curl or wget) and extract
@@ -42,8 +44,8 @@ fi
 unzip -q -o "$ZIP_PATH" -d "$EXTRACT_DIR"
 rm -f "$ZIP_PATH"
 
-if [ ! -x "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" ]; then
-    echo "ERROR: Gradle was downloaded but not found at $EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" >&2
+if [ ! -x "$EXTRACT_DIR/$GRADLE_INNER_DIR/bin/gradle" ]; then
+    echo "ERROR: Gradle was downloaded but not found at $EXTRACT_DIR/$GRADLE_INNER_DIR/bin/gradle" >&2
     exit 1
 fi
-exec "$EXTRACT_DIR/$DIST_ZIP_NAME/bin/gradle" "$@"
+exec "$EXTRACT_DIR/$GRADLE_INNER_DIR/bin/gradle" "$@"
