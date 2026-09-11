@@ -13,6 +13,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -46,10 +47,9 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSIONS = 1001;
-    private static final String MODEL = "gemini-1.5-flash";
-    private static final String API_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent";
-    private int nextKeyIndex = 0;
+    private static final String GEMINI_MODEL = "gemini-1.5-flash";
+    private static final String GEMINI_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent";
 
     private PreviewView viewFinder;
     private Button btnHelp;
@@ -175,8 +175,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // کلیدهای واردشده در صفحه تنظیمات را می‌خواند و خانه‌های خالی را کنار می‌گذارد
-    private List<String> loadApiKeys() {
+    private void showError(String message) {
+        runOnUiThread(() -> new AlertDialog.Builder(this)
+                .setTitle(R.string.error_dialog_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.error_dialog_ok, null)
+                .show());
+    }
+
+    private void showResult(String text) {
+        runOnUiThread(() -> tvStatus.setText(text));
+    }
+
+    private void sendToApi(byte[] imageBytes) {
+        if (imageBytes.length == 0) {
+            showError(getString(R.string.empty_image));
+            return;
+        }
+        String provider = AppPrefs.getProvider(this);
+        if (AppPrefs.PROVIDER_CUSTOM.equals(provider)) {
+            sendToCustomProvider(imageBytes);
+        } else {
+            sendToGemini(imageBytes);
+        }
+    }
+
+    // کلیدهای گوگل واردشده در تنظیمات را می‌خواند و خانه‌های خالی را کنار می‌گذارد
+    private List<String> loadGoogleKeys() {
         List<String> keys = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             String key = AppPrefs.getApiKey(this, i);
@@ -187,27 +212,29 @@ public class MainActivity extends AppCompatActivity {
         return keys;
     }
 
-    private void sendToApi(byte[] imageBytes) {
-        List<String> apiKeys = loadApiKeys();
+    private List<String> loadCustomKeys() {
+        List<String> keys = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            String key = AppPrefs.getCustomApiKey(this, i);
+            if (key != null && !key.trim().isEmpty()) {
+                keys.add(key.trim());
+            }
+        }
+        return keys;
+    }
+
+    private void sendToGemini(byte[] imageBytes) {
+        List<String> apiKeys = loadGoogleKeys();
         if (apiKeys.isEmpty()) {
-            tvStatus.setText(R.string.no_keys_message);
+            showError(getString(R.string.no_keys_message));
             return;
         }
         executor.execute(() -> {
-            if (imageBytes.length == 0) {
-                runOnUiThread(() -> tvStatus.setText(R.string.empty_image));
-                return;
-            }
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-            String lastError = getString(R.string.unknown_error);
+            List<String> errorLines = new ArrayList<>();
 
-            if (nextKeyIndex >= apiKeys.size()) {
-                nextKeyIndex = 0;
-            }
-
-            for (int attempt = 0; attempt < apiKeys.size(); attempt++) {
-                int keyIndex = (nextKeyIndex + attempt) % apiKeys.size();
-                String apiKey = apiKeys.get(keyIndex);
+            for (int i = 0; i < apiKeys.size(); i++) {
+                String apiKey = apiKeys.get(i);
                 try {
                     JSONObject inlineData = new JSONObject();
                     inlineData.put("mime_type", "image/jpeg");
@@ -226,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
                     body.put("contents", new JSONArray().put(content));
 
                     Request request = new Request.Builder()
-                            .url(API_URL)
+                            .url(GEMINI_URL)
                             .header("x-goog-api-key", apiKey)
                             .header("Content-Type", "application/json")
                             .post(RequestBody.create(body.toString(),
@@ -234,10 +261,7 @@ public class MainActivity extends AppCompatActivity {
                             .build();
 
                     try (Response response = httpClient.newCall(request).execute()) {
-                        InputStream is = response.body() != null
-                                ? response.body().byteStream() : null;
-                        String json = is != null
-                                ? new String(readAll(is), StandardCharsets.UTF_8) : "";
+                        String json = readResponseBody(response);
 
                         if (response.isSuccessful()) {
                             JSONObject root = new JSONObject(json);
@@ -247,31 +271,113 @@ public class MainActivity extends AppCompatActivity {
                                     .getJSONArray("parts")
                                     .getJSONObject(0)
                                     .getString("text");
-                            nextKeyIndex = (keyIndex + 1) % apiKeys.size();
-                            String finalResult = result;
-                            runOnUiThread(() -> tvStatus.setText(finalResult));
+                            showResult(result);
                             return;
                         }
 
-                        // کد 429 یعنی سهمیه این کلید تمام شده، کد 403 یعنی کلید نامعتبر است - هر دو با کلید بعدی دوباره تلاش می‌شود
-                        if (response.code() == 429 || response.code() == 403) {
-                            lastError = String.format(getString(R.string.key_error_format),
-                                    keyIndex + 1, response.code());
-                            continue;
-                        }
-
-                        lastError = getString(R.string.server_error_prefix) + response.code() + " - " + json;
-                        break;
+                        errorLines.add(String.format(getString(R.string.key_status_line_format),
+                                i + 1, describeHttpError(response.code())));
                     }
                 } catch (Exception e) {
-                    lastError = getString(R.string.generic_error_prefix) + e.getMessage();
+                    errorLines.add(String.format(getString(R.string.key_status_line_format),
+                            i + 1, getString(R.string.generic_error_prefix) + e.getMessage()));
                 }
             }
 
-            nextKeyIndex = (nextKeyIndex + 1) % apiKeys.size();
-            String finalError = lastError;
-            runOnUiThread(() -> tvStatus.setText(finalError));
+            showError(String.join("\n", errorLines));
         });
+    }
+
+    private void sendToCustomProvider(byte[] imageBytes) {
+        String endpoint = AppPrefs.getCustomEndpoint(this);
+        String model = AppPrefs.getCustomModel(this);
+        if (endpoint == null || endpoint.trim().isEmpty()
+                || model == null || model.trim().isEmpty()) {
+            showError(getString(R.string.custom_not_configured));
+            return;
+        }
+        List<String> apiKeys = loadCustomKeys();
+        if (apiKeys.isEmpty()) {
+            showError(getString(R.string.no_keys_message));
+            return;
+        }
+        String finalEndpoint = endpoint.trim();
+        String finalModel = model.trim();
+
+        executor.execute(() -> {
+            String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+            List<String> errorLines = new ArrayList<>();
+
+            for (int i = 0; i < apiKeys.size(); i++) {
+                String apiKey = apiKeys.get(i);
+                try {
+                    // قالب سازگار با OpenAI (messages / content) که رایج‌ترین قالب بین سرویس‌دهنده‌های واسط است
+                    JSONObject imageUrl = new JSONObject();
+                    imageUrl.put("url", "data:image/jpeg;base64," + base64);
+
+                    JSONObject imagePart = new JSONObject();
+                    imagePart.put("type", "image_url");
+                    imagePart.put("image_url", imageUrl);
+
+                    JSONObject textPart = new JSONObject();
+                    textPart.put("type", "text");
+                    textPart.put("text", getString(R.string.prompt_describe));
+
+                    JSONObject message = new JSONObject();
+                    message.put("role", "user");
+                    message.put("content", new JSONArray().put(textPart).put(imagePart));
+
+                    JSONObject body = new JSONObject();
+                    body.put("model", finalModel);
+                    body.put("messages", new JSONArray().put(message));
+
+                    Request request = new Request.Builder()
+                            .url(finalEndpoint)
+                            .header("Authorization", "Bearer " + apiKey)
+                            .header("Content-Type", "application/json")
+                            .post(RequestBody.create(body.toString(),
+                                    MediaType.parse("application/json")))
+                            .build();
+
+                    try (Response response = httpClient.newCall(request).execute()) {
+                        String json = readResponseBody(response);
+
+                        if (response.isSuccessful()) {
+                            JSONObject root = new JSONObject(json);
+                            String result = root.getJSONArray("choices")
+                                    .getJSONObject(0)
+                                    .getJSONObject("message")
+                                    .getString("content");
+                            showResult(result);
+                            return;
+                        }
+
+                        errorLines.add(String.format(getString(R.string.key_status_line_format),
+                                i + 1, describeHttpError(response.code())));
+                    }
+                } catch (Exception e) {
+                    errorLines.add(String.format(getString(R.string.key_status_line_format),
+                            i + 1, getString(R.string.generic_error_prefix) + e.getMessage()));
+                }
+            }
+
+            showError(String.join("\n", errorLines));
+        });
+    }
+
+    private String describeHttpError(int code) {
+        if (code == 429) {
+            return getString(R.string.quota_exceeded);
+        }
+        if (code == 401 || code == 403) {
+            return getString(R.string.invalid_key);
+        }
+        return getString(R.string.server_error_prefix) + code;
+    }
+
+    private static String readResponseBody(Response response) throws Exception {
+        InputStream is = response.body() != null ? response.body().byteStream() : null;
+        return is != null ? new String(readAll(is), StandardCharsets.UTF_8) : "";
     }
 
     private static byte[] readAll(InputStream is) throws Exception {

@@ -12,10 +12,10 @@
         android:padding="8dp">
 
         <Button
-            android:id="@+id/btnHelp"
+            android:id="@+id/btnMenu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/btn_help" />
+            android:text="@string/btn_menu" />
 
         <TextView
             android:layout_width="0dp"
@@ -27,10 +27,10 @@
             android:text="@string/app_name" />
 
         <Button
-            android:id="@+id/btnMenu"
+            android:id="@+id/btnHelp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/btn_menu" />
+            android:text="@string/btn_help" />
 
     </LinearLayout>
 
@@ -55,6 +55,7 @@
         android:layout_margin="8dp"
         android:gravity="center"
         android:textSize="16sp"
+        android:accessibilityLiveRegion="polite"
         android:text="@string/status_ready" />
 
 </LinearLayout>

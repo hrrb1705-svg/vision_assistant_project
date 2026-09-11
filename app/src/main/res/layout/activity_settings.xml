@@ -47,6 +47,33 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="@string/provider_label"
+            android:textSize="16sp" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupProvider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radioProviderGoogle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/provider_google" />
+
+            <RadioButton
+                android:id="@+id/radioProviderCustom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/provider_custom" />
+
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/settings_keys_label"
             android:textSize="16sp"
             android:layout_marginBottom="8dp" />
@@ -60,6 +87,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:contentDescription="@string/key_label_1"
             android:importantForAutofill="no" />
 
         <TextView
@@ -71,6 +99,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:contentDescription="@string/key_label_2"
             android:importantForAutofill="no" />
 
         <TextView
@@ -82,6 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:contentDescription="@string/key_label_3"
             android:importantForAutofill="no" />
 
         <TextView
@@ -93,6 +123,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:contentDescription="@string/key_label_4"
             android:importantForAutofill="no" />
 
         <TextView
@@ -104,6 +135,101 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:contentDescription="@string/key_label_5"
+            android:importantForAutofill="no"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_section_label"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_endpoint_label" />
+        <EditText
+            android:id="@+id/editCustomEndpoint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri"
+            android:contentDescription="@string/custom_endpoint_label"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_model_label" />
+        <EditText
+            android:id="@+id/editCustomModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_model_label"
+            android:importantForAutofill="no"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_key_label_1" />
+        <EditText
+            android:id="@+id/editCustomKey1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_key_label_1"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_key_label_2" />
+        <EditText
+            android:id="@+id/editCustomKey2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_key_label_2"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_key_label_3" />
+        <EditText
+            android:id="@+id/editCustomKey3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_key_label_3"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_key_label_4" />
+        <EditText
+            android:id="@+id/editCustomKey4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_key_label_4"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_key_label_5" />
+        <EditText
+            android:id="@+id/editCustomKey5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:contentDescription="@string/custom_key_label_5"
             android:importantForAutofill="no"
             android:layout_marginBottom="16dp" />
 
