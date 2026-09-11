@@ -1,3 +1,31 @@
 <resources>
     <string name="app_name">دستیار بینایی</string>
+    <string name="btn_help">راهنما</string>
+    <string name="btn_menu">منو</string>
+    <string name="menu_settings">تنظیمات</string>
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_language_label">زبان برنامه</string>
+    <string name="settings_keys_label">پنج کلید Gemini گوگل</string>
+    <string name="key_label_1">کلید شماره ۱</string>
+    <string name="key_label_2">کلید شماره ۲</string>
+    <string name="key_label_3">کلید شماره ۳</string>
+    <string name="key_label_4">کلید شماره ۴</string>
+    <string name="key_label_5">کلید شماره ۵</string>
+    <string name="settings_save">ذخیره</string>
+    <string name="settings_saved_message">تنظیمات ذخیره شد</string>
+    <string name="help_placeholder">این بخش راهنما به‌زودی تکمیل می‌شود.</string>
+    <string name="btn_capture_describe">توصیف محیط و موانع</string>
+    <string name="status_ready">آماده برای دریافت دستور</string>
+    <string name="permission_denied">دسترسی دوربین داده نشد</string>
+    <string name="capturing_image">در حال گرفتن تصویر...</string>
+    <string name="camera_not_ready">دوربین آماده نیست</string>
+    <string name="error_capture_prefix">خطا در گرفتن تصویر: </string>
+    <string name="error_camera_start_prefix">خطا در راه‌اندازی دوربین: </string>
+    <string name="empty_image">تصویر خالی است</string>
+    <string name="server_error_prefix">خطای سرور: </string>
+    <string name="generic_error_prefix">خطا: </string>
+    <string name="unknown_error">خطای نامشخص</string>
+    <string name="key_error_format">خطای کلید شماره %1$d: %2$d</string>
+    <string name="no_keys_message">هیچ کلیدی در تنظیمات وارد نشده. از دکمه منو وارد تنظیمات شو و حداقل یک کلید Gemini اضافه کن.</string>
+    <string name="prompt_describe">اشیاء و موانع موجود در این تصویر را کوتاه و مفید برای یک فرد نابینا توصیف کن.</string>
 </resources>

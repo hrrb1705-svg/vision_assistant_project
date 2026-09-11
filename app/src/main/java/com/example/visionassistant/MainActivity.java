@@ -1,12 +1,15 @@
 package com.example.visionassistant;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,6 +32,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,11 +46,14 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSIONS = 1001;
-    private static final String API_KEY = "12345";
-    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String MODEL = "gpt-4o-mini";
+    private static final String MODEL = "gemini-1.5-flash";
+    private static final String API_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent";
+    private int nextKeyIndex = 0;
 
     private PreviewView viewFinder;
+    private Button btnHelp;
+    private Button btnMenu;
     private Button btnCaptureDescribe;
     private TextView tvStatus;
     private ImageCapture imageCapture;
@@ -53,11 +61,18 @@ public class MainActivity extends AppCompatActivity {
     private final OkHttpClient httpClient = new OkHttpClient();
 
     @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         viewFinder = findViewById(R.id.viewFinder);
+        btnHelp = findViewById(R.id.btnHelp);
+        btnMenu = findViewById(R.id.btnMenu);
         btnCaptureDescribe = findViewById(R.id.btnCaptureDescribe);
         tvStatus = findViewById(R.id.tvStatus);
 
@@ -71,6 +86,22 @@ public class MainActivity extends AppCompatActivity {
         }
 
         btnCaptureDescribe.setOnClickListener(v -> captureAndDescribe());
+        btnHelp.setOnClickListener(v ->
+                startActivity(new android.content.Intent(this, HelpActivity.class)));
+        btnMenu.setOnClickListener(this::showMainMenu);
+    }
+
+    private void showMainMenu(android.view.View anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        popupMenu.getMenuInflater().inflate(R.menu.main_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener((MenuItem item) -> {
+            if (item.getItemId() == R.id.menu_settings) {
+                startActivity(new android.content.Intent(this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
+        popupMenu.show();
     }
 
     @Override
@@ -81,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startCamera();
             } else {
-                tvStatus.setText("دسترسی دوربین داده نشد");
+                tvStatus.setText(R.string.permission_denied);
             }
         }
     }
@@ -99,17 +130,17 @@ public class MainActivity extends AppCompatActivity {
                 provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA,
                         preview, imageCapture);
             } catch (Exception e) {
-                tvStatus.setText("خطا در راه‌اندازی دوربین: " + e.getMessage());
+                tvStatus.setText(getString(R.string.error_camera_start_prefix) + e.getMessage());
             }
         }, ContextCompat.getMainExecutor(this));
     }
 
     private void captureAndDescribe() {
         if (imageCapture == null) {
-            tvStatus.setText("دوربین آماده نیست");
+            tvStatus.setText(R.string.camera_not_ready);
             return;
         }
-        tvStatus.setText("در حال گرفتن تصویر...");
+        tvStatus.setText(R.string.capturing_image);
         imageCapture.takePicture(ContextCompat.getMainExecutor(this),
                 new ImageCapture.OnImageCapturedCallback() {
                     @Override
@@ -121,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
-                        tvStatus.setText("خطا در گرفتن تصویر: " + exception.getMessage());
+                        tvStatus.setText(getString(R.string.error_capture_prefix) + exception.getMessage());
                     }
                 });
     }
@@ -144,68 +175,102 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void sendToApi(byte[] imageBytes) {
-        executor.execute(() -> {
-            try {
-                if (imageBytes.length == 0) {
-                    runOnUiThread(() -> tvStatus.setText("تصویر خالی است"));
-                    return;
-                }
-                String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-
-                JSONObject imageContent = new JSONObject();
-                imageContent.put("type", "image_url");
-                imageContent.put("image_url",
-                        new JSONObject().put("url", "data:image/jpeg;base64," + base64));
-
-                JSONObject textContent = new JSONObject();
-                textContent.put("type", "text");
-                textContent.put("text", "اشیاء و موانع موجود در این تصویر را توصیف کن.");
-
-                JSONObject systemMessage = new JSONObject();
-                systemMessage.put("role", "system");
-                systemMessage.put("content",
-                        "You are a vision assistant for a blind user. Describe objects and obstacles concisely.");
-
-                JSONObject userMessage = new JSONObject();
-                userMessage.put("role", "user");
-                userMessage.put("content",
-                        new JSONArray().put(textContent).put(imageContent));
-
-                JSONObject body = new JSONObject();
-                body.put("model", MODEL);
-                body.put("messages", new JSONArray().put(systemMessage).put(userMessage));
-
-                Request request = new Request.Builder()
-                        .url(API_URL)
-                        .header("Authorization", "Bearer " + API_KEY)
-                        .header("Content-Type", "application/json")
-                        .post(RequestBody.create(body.toString(),
-                                MediaType.parse("application/json")))
-                        .build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    InputStream is = response.body() != null
-                            ? response.body().byteStream() : null;
-                    String json = is != null
-                            ? new String(readAll(is), StandardCharsets.UTF_8) : "";
-                    String result;
-                    if (response.isSuccessful()) {
-                        JSONObject root = new JSONObject(json);
-                        result = root.getJSONArray("choices")
-                                .getJSONObject(0)
-                                .getJSONObject("message")
-                                .getString("content");
-                    } else {
-                        result = "خطای سرور: " + response.code() + " - " + json;
-                    }
-                    String finalResult = result;
-                    runOnUiThread(() -> tvStatus.setText(finalResult));
-                }
-            } catch (Exception e) {
-                String msg = "خطا: " + e.getMessage();
-                runOnUiThread(() -> tvStatus.setText(msg));
+    // کلیدهای واردشده در صفحه تنظیمات را می‌خواند و خانه‌های خالی را کنار می‌گذارد
+    private List<String> loadApiKeys() {
+        List<String> keys = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            String key = AppPrefs.getApiKey(this, i);
+            if (key != null && !key.trim().isEmpty()) {
+                keys.add(key.trim());
             }
+        }
+        return keys;
+    }
+
+    private void sendToApi(byte[] imageBytes) {
+        List<String> apiKeys = loadApiKeys();
+        if (apiKeys.isEmpty()) {
+            tvStatus.setText(R.string.no_keys_message);
+            return;
+        }
+        executor.execute(() -> {
+            if (imageBytes.length == 0) {
+                runOnUiThread(() -> tvStatus.setText(R.string.empty_image));
+                return;
+            }
+            String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+            String lastError = getString(R.string.unknown_error);
+
+            if (nextKeyIndex >= apiKeys.size()) {
+                nextKeyIndex = 0;
+            }
+
+            for (int attempt = 0; attempt < apiKeys.size(); attempt++) {
+                int keyIndex = (nextKeyIndex + attempt) % apiKeys.size();
+                String apiKey = apiKeys.get(keyIndex);
+                try {
+                    JSONObject inlineData = new JSONObject();
+                    inlineData.put("mime_type", "image/jpeg");
+                    inlineData.put("data", base64);
+
+                    JSONObject imagePart = new JSONObject();
+                    imagePart.put("inline_data", inlineData);
+
+                    JSONObject textPart = new JSONObject();
+                    textPart.put("text", getString(R.string.prompt_describe));
+
+                    JSONObject content = new JSONObject();
+                    content.put("parts", new JSONArray().put(textPart).put(imagePart));
+
+                    JSONObject body = new JSONObject();
+                    body.put("contents", new JSONArray().put(content));
+
+                    Request request = new Request.Builder()
+                            .url(API_URL)
+                            .header("x-goog-api-key", apiKey)
+                            .header("Content-Type", "application/json")
+                            .post(RequestBody.create(body.toString(),
+                                    MediaType.parse("application/json")))
+                            .build();
+
+                    try (Response response = httpClient.newCall(request).execute()) {
+                        InputStream is = response.body() != null
+                                ? response.body().byteStream() : null;
+                        String json = is != null
+                                ? new String(readAll(is), StandardCharsets.UTF_8) : "";
+
+                        if (response.isSuccessful()) {
+                            JSONObject root = new JSONObject(json);
+                            String result = root.getJSONArray("candidates")
+                                    .getJSONObject(0)
+                                    .getJSONObject("content")
+                                    .getJSONArray("parts")
+                                    .getJSONObject(0)
+                                    .getString("text");
+                            nextKeyIndex = (keyIndex + 1) % apiKeys.size();
+                            String finalResult = result;
+                            runOnUiThread(() -> tvStatus.setText(finalResult));
+                            return;
+                        }
+
+                        // کد 429 یعنی سهمیه این کلید تمام شده، کد 403 یعنی کلید نامعتبر است - هر دو با کلید بعدی دوباره تلاش می‌شود
+                        if (response.code() == 429 || response.code() == 403) {
+                            lastError = String.format(getString(R.string.key_error_format),
+                                    keyIndex + 1, response.code());
+                            continue;
+                        }
+
+                        lastError = getString(R.string.server_error_prefix) + response.code() + " - " + json;
+                        break;
+                    }
+                } catch (Exception e) {
+                    lastError = getString(R.string.generic_error_prefix) + e.getMessage();
+                }
+            }
+
+            nextKeyIndex = (nextKeyIndex + 1) % apiKeys.size();
+            String finalError = lastError;
+            runOnUiThread(() -> tvStatus.setText(finalError));
         });
     }
 

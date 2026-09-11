@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Vision Assistant</string>
+    <string name="btn_help">Help</string>
+    <string name="btn_menu">Menu</string>
+    <string name="menu_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_language_label">App language</string>
+    <string name="settings_keys_label">Five Google Gemini keys</string>
+    <string name="key_label_1">Key number 1</string>
+    <string name="key_label_2">Key number 2</string>
+    <string name="key_label_3">Key number 3</string>
+    <string name="key_label_4">Key number 4</string>
+    <string name="key_label_5">Key number 5</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_saved_message">Settings saved</string>
+    <string name="help_placeholder">This help section will be completed soon.</string>
+    <string name="btn_capture_describe">Describe surroundings and obstacles</string>
+    <string name="status_ready">Ready to receive a command</string>
+    <string name="permission_denied">Camera permission was not granted</string>
+    <string name="capturing_image">Capturing image...</string>
+    <string name="camera_not_ready">Camera is not ready</string>
+    <string name="error_capture_prefix">Error capturing image: </string>
+    <string name="error_camera_start_prefix">Error starting camera: </string>
+    <string name="empty_image">Image is empty</string>
+    <string name="server_error_prefix">Server error: </string>
+    <string name="generic_error_prefix">Error: </string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="key_error_format">Key number %1$d error: %2$d</string>
+    <string name="no_keys_message">No key has been entered in settings. Open settings from the menu and add at least one Gemini key.</string>
+    <string name="prompt_describe">Describe the objects and obstacles in this image briefly and usefully for a blind person.</string>
+</resources>
