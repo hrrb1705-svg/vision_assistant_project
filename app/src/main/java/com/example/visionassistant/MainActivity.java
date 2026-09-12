@@ -373,8 +373,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String describeHttpError(int code, String rawJson) {
+        String trimmedBody = rawJson == null ? "" : rawJson.trim();
+        boolean looksLikeHtmlBlockPage = trimmedBody.startsWith("<")
+                || trimmedBody.toLowerCase(java.util.Locale.ROOT).contains("<html");
+
         String base;
-        if (code == 429) {
+        if (looksLikeHtmlBlockPage && (code == 403 || code == 429 || code == 401)) {
+            base = getString(R.string.blocked_by_network);
+        } else if (code == 429) {
             base = getString(R.string.quota_exceeded);
         } else if (code == 401 || code == 403) {
             base = getString(R.string.invalid_key);

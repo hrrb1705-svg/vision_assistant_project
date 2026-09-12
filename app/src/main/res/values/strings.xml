@@ -46,6 +46,7 @@
 
     <string name="error_dialog_title">خطا</string>
     <string name="error_dialog_ok">باشه</string>
+    <string name="blocked_by_network">این درخواست از سرور گوگل با یک صفحه عمومی رد شده، این معمولاً یعنی مشکل از موقعیت شبکه یا کشور است، نه از خود کلید</string>
     <string name="quota_exceeded">سهمیه این کلید تمام شده</string>
     <string name="invalid_key">این کلید نامعتبر است</string>
     <string name="key_status_line_format">کلید شماره %1$d: %2$s</string>
