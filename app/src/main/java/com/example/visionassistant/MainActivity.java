@@ -47,7 +47,7 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSIONS = 1001;
-    private static final String GEMINI_MODEL = "gemini-1.5-flash";
+    private static final String GEMINI_MODEL = "gemini-3.8-flash";
     private static final String GEMINI_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent";
 
