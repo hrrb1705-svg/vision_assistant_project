@@ -46,8 +46,8 @@
 
     <string name="error_dialog_title">Error</string>
     <string name="error_dialog_ok">OK</string>
-    <string name="blocked_by_network">Google's server rejected this request with a generic block page, which usually means the problem is your network or country, not the key itself</string>
-    <string name="quota_exceeded">This key\'s quota is exhausted</string>
+    <string name="blocked_by_network">The Google server rejected this request with a generic block page, which usually means the problem is your network or country, not the key itself</string>
+    <string name="quota_exceeded">The quota for this key is exhausted</string>
     <string name="invalid_key">This key is invalid</string>
     <string name="key_status_line_format">Key number %1$d: %2$s</string>
 </resources>
