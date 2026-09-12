@@ -58,7 +58,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvStatus;
     private ImageCapture imageCapture;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final OkHttpClient httpClient = new OkHttpClient();
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
+            .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
+            .build();
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -378,10 +382,22 @@ public class MainActivity extends AppCompatActivity {
             base = getString(R.string.server_error_prefix) + code;
         }
         String detail = extractServerErrorMessage(rawJson);
-        if (detail != null && !detail.isEmpty()) {
+        if (detail == null || detail.trim().isEmpty()) {
+            // اگر ساختار مشخص پیام خطا پیدا نشد، به‌جای هیچ‌چیز، خود متن خام پاسخ نشان داده شود
+            detail = rawJson;
+        }
+        detail = truncate(detail == null ? "" : detail.trim(), 250);
+        if (!detail.isEmpty()) {
             return base + " - " + detail;
         }
         return base;
+    }
+
+    private static String truncate(String text, int maxLen) {
+        if (text.length() <= maxLen) {
+            return text;
+        }
+        return text.substring(0, maxLen) + "...";
     }
 
     // پیام دقیق خود سرور (مثلاً نامعتبر بودن کلید یا محدودیت موقعیت مکانی) را از پاسخ JSON بیرون می‌کشد
@@ -400,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception ignored) {
-            // پاسخ همیشه JSON قابل‌تجزیه نیست، در آن صورت فقط کد خطا نشان داده می‌شود
+            // پاسخ همیشه JSON قابل‌تجزیه نیست، در آن صورت متن خام پایین‌تر نشان داده می‌شود
         }
         return null;
     }
