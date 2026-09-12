@@ -28,12 +28,15 @@
     <string name="no_keys_message">هیچ کلیدی در تنظیمات وارد نشده. از دکمه منو وارد تنظیمات شو و حداقل یک کلید اضافه کن.</string>
     <string name="prompt_describe">اشیاء و موانع موجود در این تصویر را کوتاه و مفید برای یک فرد نابینا توصیف کن.</string>
 
+    <string name="settings_menu_language">زبان</string>
+    <string name="settings_menu_services">سرویس‌ها</string>
+    <string name="custom_model_label">نام سرویس</string>
+
     <string name="provider_label">سرویس مورد استفاده</string>
     <string name="provider_google">گوگل (Gemini)</string>
     <string name="provider_custom">سرویس دوم (سفارشی)</string>
     <string name="custom_section_label">تنظیمات سرویس دوم</string>
     <string name="custom_endpoint_label">آدرس اینترنتی سرویس (endpoint)</string>
-    <string name="custom_model_label">نام مدل</string>
     <string name="custom_key_label_1">کلید شماره ۱ سرویس دوم</string>
     <string name="custom_key_label_2">کلید شماره ۲ سرویس دوم</string>
     <string name="custom_key_label_3">کلید شماره ۳ سرویس دوم</string>

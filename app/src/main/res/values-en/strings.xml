@@ -28,12 +28,15 @@
     <string name="no_keys_message">No key has been entered in settings. Open settings from the menu and add at least one key.</string>
     <string name="prompt_describe">Describe the objects and obstacles in this image briefly and usefully for a blind person.</string>
 
+    <string name="settings_menu_language">Language</string>
+    <string name="settings_menu_services">Services</string>
+    <string name="custom_model_label">Service name</string>
+
     <string name="provider_label">Service in use</string>
     <string name="provider_google">Google (Gemini)</string>
     <string name="provider_custom">Second service (custom)</string>
     <string name="custom_section_label">Second service settings</string>
     <string name="custom_endpoint_label">Service endpoint URL</string>
-    <string name="custom_model_label">Model name</string>
     <string name="custom_key_label_1">Second service key number 1</string>
     <string name="custom_key_label_2">Second service key number 2</string>
     <string name="custom_key_label_3">Second service key number 3</string>

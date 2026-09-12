@@ -176,11 +176,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
-        runOnUiThread(() -> new AlertDialog.Builder(this)
-                .setTitle(R.string.error_dialog_title)
-                .setMessage(message)
-                .setPositiveButton(R.string.error_dialog_ok, null)
-                .show());
+        runOnUiThread(() -> {
+            tvStatus.setText(R.string.status_ready);
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.error_dialog_title)
+                    .setMessage(message)
+                    .setPositiveButton(R.string.error_dialog_ok, null)
+                    .show();
+        });
     }
 
     private void showResult(String text) {
@@ -276,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         errorLines.add(String.format(getString(R.string.key_status_line_format),
-                                i + 1, describeHttpError(response.code())));
+                                i + 1, describeHttpError(response.code(), json)));
                     }
                 } catch (Exception e) {
                     errorLines.add(String.format(getString(R.string.key_status_line_format),
@@ -353,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         errorLines.add(String.format(getString(R.string.key_status_line_format),
-                                i + 1, describeHttpError(response.code())));
+                                i + 1, describeHttpError(response.code(), json)));
                     }
                 } catch (Exception e) {
                     errorLines.add(String.format(getString(R.string.key_status_line_format),
@@ -365,14 +368,41 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private String describeHttpError(int code) {
+    private String describeHttpError(int code, String rawJson) {
+        String base;
         if (code == 429) {
-            return getString(R.string.quota_exceeded);
+            base = getString(R.string.quota_exceeded);
+        } else if (code == 401 || code == 403) {
+            base = getString(R.string.invalid_key);
+        } else {
+            base = getString(R.string.server_error_prefix) + code;
         }
-        if (code == 401 || code == 403) {
-            return getString(R.string.invalid_key);
+        String detail = extractServerErrorMessage(rawJson);
+        if (detail != null && !detail.isEmpty()) {
+            return base + " - " + detail;
         }
-        return getString(R.string.server_error_prefix) + code;
+        return base;
+    }
+
+    // پیام دقیق خود سرور (مثلاً نامعتبر بودن کلید یا محدودیت موقعیت مکانی) را از پاسخ JSON بیرون می‌کشد
+    private static String extractServerErrorMessage(String rawJson) {
+        try {
+            JSONObject root = new JSONObject(rawJson);
+            if (root.has("error")) {
+                Object errorField = root.get("error");
+                if (errorField instanceof JSONObject) {
+                    JSONObject errorObj = (JSONObject) errorField;
+                    if (errorObj.has("message")) {
+                        return errorObj.getString("message");
+                    }
+                } else if (errorField instanceof String) {
+                    return (String) errorField;
+                }
+            }
+        } catch (Exception ignored) {
+            // پاسخ همیشه JSON قابل‌تجزیه نیست، در آن صورت فقط کد خطا نشان داده می‌شود
+        }
+        return null;
     }
 
     private static String readResponseBody(Response response) throws Exception {

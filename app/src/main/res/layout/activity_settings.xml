@@ -1,243 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_title"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnOpenLanguage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_marginBottom="8dp"
+        android:text="@string/settings_menu_language" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_title"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+    <Button
+        android:id="@+id/btnOpenServices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_menu_services" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_language_label"
-            android:textSize="16sp" />
-
-        <RadioGroup
-            android:id="@+id/radioGroupLanguage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/radioFarsi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="فارسی" />
-
-            <RadioButton
-                android:id="@+id/radioEnglish"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="English" />
-
-        </RadioGroup>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/provider_label"
-            android:textSize="16sp" />
-
-        <RadioGroup
-            android:id="@+id/radioGroupProvider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/radioProviderGoogle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/provider_google" />
-
-            <RadioButton
-                android:id="@+id/radioProviderCustom"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/provider_custom" />
-
-        </RadioGroup>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_keys_label"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/key_label_1" />
-        <EditText
-            android:id="@+id/editKey1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/key_label_1"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/key_label_2" />
-        <EditText
-            android:id="@+id/editKey2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/key_label_2"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/key_label_3" />
-        <EditText
-            android:id="@+id/editKey3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/key_label_3"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/key_label_4" />
-        <EditText
-            android:id="@+id/editKey4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/key_label_4"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/key_label_5" />
-        <EditText
-            android:id="@+id/editKey5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/key_label_5"
-            android:importantForAutofill="no"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_section_label"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_endpoint_label" />
-        <EditText
-            android:id="@+id/editCustomEndpoint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textUri"
-            android:contentDescription="@string/custom_endpoint_label"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_model_label" />
-        <EditText
-            android:id="@+id/editCustomModel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_model_label"
-            android:importantForAutofill="no"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_key_label_1" />
-        <EditText
-            android:id="@+id/editCustomKey1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_key_label_1"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_key_label_2" />
-        <EditText
-            android:id="@+id/editCustomKey2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_key_label_2"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_key_label_3" />
-        <EditText
-            android:id="@+id/editCustomKey3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_key_label_3"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_key_label_4" />
-        <EditText
-            android:id="@+id/editCustomKey4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_key_label_4"
-            android:importantForAutofill="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/custom_key_label_5" />
-        <EditText
-            android:id="@+id/editCustomKey5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:contentDescription="@string/custom_key_label_5"
-            android:importantForAutofill="no"
-            android:layout_marginBottom="16dp" />
-
-        <Button
-            android:id="@+id/btnSaveSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_save" />
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

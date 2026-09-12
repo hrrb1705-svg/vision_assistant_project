@@ -23,6 +23,14 @@
             android:label="@string/settings_title"
             android:exported="false" />
         <activity
+            android:name=".LanguageActivity"
+            android:label="@string/settings_menu_language"
+            android:exported="false" />
+        <activity
+            android:name=".ServicesActivity"
+            android:label="@string/settings_menu_services"
+            android:exported="false" />
+        <activity
             android:name=".HelpActivity"
             android:label="@string/btn_help"
             android:exported="false" />
