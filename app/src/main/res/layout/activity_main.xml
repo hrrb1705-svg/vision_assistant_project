@@ -36,17 +36,25 @@
 
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_margin="8dp" />
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:importantForAccessibility="no" />
 
     <Button
-        android:id="@+id/btnCaptureDescribe"
+        android:id="@+id/btnCaptureCamera"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:text="@string/btn_capture_describe" />
+        android:enabled="false"
+        android:text="@string/btn_capture_camera" />
+
+    <Button
+        android:id="@+id/btnChooseMedia"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:enabled="false"
+        android:text="@string/btn_choose_media" />
 
     <TextView
         android:id="@+id/tvStatus"

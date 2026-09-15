@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.MenuItem;
@@ -12,6 +13,8 @@ import android.widget.Button;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,16 +50,15 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSIONS = 1001;
-    private static final String GEMINI_MODEL = "gemini-3.8-flash";
-    private static final String GEMINI_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent";
 
     private PreviewView viewFinder;
     private Button btnHelp;
     private Button btnMenu;
-    private Button btnCaptureDescribe;
+    private Button btnCaptureCamera;
+    private Button btnChooseMedia;
     private TextView tvStatus;
     private ImageCapture imageCapture;
+    private ActivityResultLauncher<String> pickMediaLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
@@ -77,8 +79,12 @@ public class MainActivity extends AppCompatActivity {
         viewFinder = findViewById(R.id.viewFinder);
         btnHelp = findViewById(R.id.btnHelp);
         btnMenu = findViewById(R.id.btnMenu);
-        btnCaptureDescribe = findViewById(R.id.btnCaptureDescribe);
+        btnCaptureCamera = findViewById(R.id.btnCaptureCamera);
+        btnChooseMedia = findViewById(R.id.btnChooseMedia);
         tvStatus = findViewById(R.id.tvStatus);
+
+        pickMediaLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(), this::onMediaPicked);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -89,10 +95,42 @@ public class MainActivity extends AppCompatActivity {
             startCamera();
         }
 
-        btnCaptureDescribe.setOnClickListener(v -> captureAndDescribe());
+        btnCaptureCamera.setOnClickListener(v -> captureAndDescribe());
+        btnChooseMedia.setOnClickListener(v -> pickMediaLauncher.launch("image/*"));
         btnHelp.setOnClickListener(v ->
                 startActivity(new android.content.Intent(this, HelpActivity.class)));
         btnMenu.setOnClickListener(this::showMainMenu);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshReadyState();
+    }
+
+    // بر اساس اینکه سرویس فعال، آدرس و مدل و حداقل یک کلید دارد یا نه، دو دکمه را فعال یا غیرفعال می‌کند
+    private void refreshReadyState() {
+        String provider = AppPrefs.getActiveProvider(this);
+        String endpoint = AppPrefs.getEndpoint(this, provider);
+        String model = AppPrefs.getModel(this, provider);
+        boolean hasKey = !loadKeys(provider).isEmpty();
+
+        boolean ready = endpoint != null && !endpoint.trim().isEmpty()
+                && model != null && !model.trim().isEmpty()
+                && hasKey;
+
+        btnCaptureCamera.setEnabled(ready);
+        btnChooseMedia.setEnabled(ready);
+
+        if (!ready) {
+            if (!hasKey) {
+                tvStatus.setText(R.string.no_keys_message);
+            } else {
+                tvStatus.setText(R.string.custom_not_configured);
+            }
+        } else {
+            tvStatus.setText(R.string.status_ready);
+        }
     }
 
     private void showMainMenu(android.view.View anchor) {
@@ -161,6 +199,34 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    private void onMediaPicked(Uri uri) {
+        if (uri == null) {
+            return;
+        }
+        tvStatus.setText(R.string.capturing_image);
+        executor.execute(() -> {
+            byte[] bytes = fileUriToJpegBytes(uri);
+            sendToApi(bytes);
+        });
+    }
+
+    private byte[] fileUriToJpegBytes(Uri uri) {
+        try (InputStream is = getContentResolver().openInputStream(uri)) {
+            if (is == null) {
+                return new byte[0];
+            }
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            if (bitmap == null) {
+                return new byte[0];
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return new byte[0];
+        }
+    }
+
     private byte[] imageProxyToJpegBytes(ImageProxy image) {
         try {
             ImageProxy.PlaneProxy[] planes = image.getPlanes();
@@ -199,30 +265,19 @@ public class MainActivity extends AppCompatActivity {
             showError(getString(R.string.empty_image));
             return;
         }
-        String provider = AppPrefs.getProvider(this);
-        if (AppPrefs.PROVIDER_CUSTOM.equals(provider)) {
-            sendToCustomProvider(imageBytes);
-        } else {
+        String provider = AppPrefs.getActiveProvider(this);
+        if (AppPrefs.PROVIDER_GOOGLE.equals(provider)) {
             sendToGemini(imageBytes);
+        } else {
+            sendToOpenAiCompatible(imageBytes, provider);
         }
     }
 
-    // کلیدهای گوگل واردشده در تنظیمات را می‌خواند و خانه‌های خالی را کنار می‌گذارد
-    private List<String> loadGoogleKeys() {
+    // کلیدهای واردشده برای یک سرویس مشخص را می‌خواند و خانه‌های خالی را کنار می‌گذارد
+    private List<String> loadKeys(String provider) {
         List<String> keys = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
-            String key = AppPrefs.getApiKey(this, i);
-            if (key != null && !key.trim().isEmpty()) {
-                keys.add(key.trim());
-            }
-        }
-        return keys;
-    }
-
-    private List<String> loadCustomKeys() {
-        List<String> keys = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) {
-            String key = AppPrefs.getCustomApiKey(this, i);
+            String key = AppPrefs.getApiKey(this, provider, i);
             if (key != null && !key.trim().isEmpty()) {
                 keys.add(key.trim());
             }
@@ -231,11 +286,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendToGemini(byte[] imageBytes) {
-        List<String> apiKeys = loadGoogleKeys();
+        List<String> apiKeys = loadKeys(AppPrefs.PROVIDER_GOOGLE);
         if (apiKeys.isEmpty()) {
             showError(getString(R.string.no_keys_message));
             return;
         }
+        String endpointBase = AppPrefs.getEndpoint(this, AppPrefs.PROVIDER_GOOGLE);
+        String model = AppPrefs.getModel(this, AppPrefs.PROVIDER_GOOGLE);
+        if (endpointBase.endsWith("/")) {
+            endpointBase = endpointBase.substring(0, endpointBase.length() - 1);
+        }
+        String url = endpointBase + "/models/" + model + ":generateContent";
+
         executor.execute(() -> {
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
             List<String> errorLines = new ArrayList<>();
@@ -260,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
                     body.put("contents", new JSONArray().put(content));
 
                     Request request = new Request.Builder()
-                            .url(GEMINI_URL)
+                            .url(url)
                             .header("x-goog-api-key", apiKey)
                             .header("Content-Type", "application/json")
                             .post(RequestBody.create(body.toString(),
@@ -295,15 +357,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void sendToCustomProvider(byte[] imageBytes) {
-        String endpoint = AppPrefs.getCustomEndpoint(this);
-        String model = AppPrefs.getCustomModel(this);
+    // قالب سازگار با OpenAI (messages / content)، برای Groq و هر سرویس دیگری که همین قالب رایج را پشتیبانی کند
+    private void sendToOpenAiCompatible(byte[] imageBytes, String provider) {
+        String endpoint = AppPrefs.getEndpoint(this, provider);
+        String model = AppPrefs.getModel(this, provider);
         if (endpoint == null || endpoint.trim().isEmpty()
                 || model == null || model.trim().isEmpty()) {
             showError(getString(R.string.custom_not_configured));
             return;
         }
-        List<String> apiKeys = loadCustomKeys();
+        List<String> apiKeys = loadKeys(provider);
         if (apiKeys.isEmpty()) {
             showError(getString(R.string.no_keys_message));
             return;
@@ -318,7 +381,6 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < apiKeys.size(); i++) {
                 String apiKey = apiKeys.get(i);
                 try {
-                    // قالب سازگار با OpenAI (messages / content) که رایج‌ترین قالب بین سرویس‌دهنده‌های واسط است
                     JSONObject imageUrl = new JSONObject();
                     imageUrl.put("url", "data:image/jpeg;base64," + base64);
 
@@ -389,7 +451,6 @@ public class MainActivity extends AppCompatActivity {
         }
         String detail = extractServerErrorMessage(rawJson);
         if (detail == null || detail.trim().isEmpty()) {
-            // اگر ساختار مشخص پیام خطا پیدا نشد، به‌جای هیچ‌چیز، خود متن خام پاسخ نشان داده شود
             detail = rawJson;
         }
         detail = truncate(detail == null ? "" : detail.trim(), 250);
@@ -406,7 +467,6 @@ public class MainActivity extends AppCompatActivity {
         return text.substring(0, maxLen) + "...";
     }
 
-    // پیام دقیق خود سرور (مثلاً نامعتبر بودن کلید یا محدودیت موقعیت مکانی) را از پاسخ JSON بیرون می‌کشد
     private static String extractServerErrorMessage(String rawJson) {
         try {
             JSONObject root = new JSONObject(rawJson);
@@ -422,7 +482,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception ignored) {
-            // پاسخ همیشه JSON قابل‌تجزیه نیست، در آن صورت متن خام پایین‌تر نشان داده می‌شود
         }
         return null;
     }

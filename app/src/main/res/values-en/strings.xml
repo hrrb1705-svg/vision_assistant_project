@@ -6,15 +6,17 @@
     <string name="settings_title">Settings</string>
     <string name="settings_language_label">App language</string>
     <string name="settings_keys_label">Five Google Gemini keys</string>
-    <string name="key_label_1">Google key number 1</string>
-    <string name="key_label_2">Google key number 2</string>
-    <string name="key_label_3">Google key number 3</string>
-    <string name="key_label_4">Google key number 4</string>
-    <string name="key_label_5">Google key number 5</string>
+    <string name="key_label_1">Key number 1</string>
+    <string name="key_label_2">Key number 2</string>
+    <string name="key_label_3">Key number 3</string>
+    <string name="key_label_4">Key number 4</string>
+    <string name="key_label_5">Key number 5</string>
     <string name="settings_save">Save</string>
     <string name="settings_saved_message">Settings saved</string>
     <string name="help_placeholder">This help section will be completed soon.</string>
     <string name="btn_capture_describe">Describe surroundings and obstacles</string>
+    <string name="btn_capture_camera">Take photo from camera</string>
+    <string name="btn_choose_media">Choose photo from phone</string>
     <string name="status_ready">Ready to receive a command</string>
     <string name="permission_denied">Camera permission was not granted</string>
     <string name="capturing_image">Capturing image...</string>
@@ -34,14 +36,10 @@
 
     <string name="provider_label">Service in use</string>
     <string name="provider_google">Google (Gemini)</string>
-    <string name="provider_custom">Second service (custom)</string>
+    <string name="provider_groq">Groq</string>
+    <string name="provider_custom">Other</string>
     <string name="custom_section_label">Second service settings</string>
     <string name="custom_endpoint_label">Service endpoint URL</string>
-    <string name="custom_key_label_1">Second service key number 1</string>
-    <string name="custom_key_label_2">Second service key number 2</string>
-    <string name="custom_key_label_3">Second service key number 3</string>
-    <string name="custom_key_label_4">Second service key number 4</string>
-    <string name="custom_key_label_5">Second service key number 5</string>
     <string name="custom_not_configured">The second service is not configured yet. In settings, enter the endpoint URL, model name, and at least one key.</string>
 
     <string name="error_dialog_title">Error</string>

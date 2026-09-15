@@ -23,26 +23,11 @@
             android:text="@string/provider_label"
             android:textSize="16sp" />
 
-        <RadioGroup
-            android:id="@+id/radioGroupProvider"
-            android:layout_width="wrap_content"
+        <Spinner
+            android:id="@+id/spinnerProvider"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/radioProviderGoogle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/provider_google" />
-
-            <RadioButton
-                android:id="@+id/radioProviderCustom"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/provider_custom" />
-
-        </RadioGroup>
+            android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
