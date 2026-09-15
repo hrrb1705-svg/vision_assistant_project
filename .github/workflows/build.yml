@@ -16,6 +16,8 @@ jobs:
           distribution: 'temurin'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
       - name: Grant execute permission
         run: chmod +x gradlew
       - name: Build APK with Gradle
