@@ -15,7 +15,7 @@ public class AppPrefs {
     public static final String GOOGLE_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta";
     public static final String GOOGLE_DEFAULT_MODEL = "gemini-3.8-flash";
     public static final String GROQ_DEFAULT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-    public static final String GROQ_DEFAULT_MODEL = "qwen/qwen3.6-27b";
+    public static final String GROQ_DEFAULT_MODEL = "";
 
     private static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -104,5 +104,9 @@ public class AppPrefs {
 
     public static void setApiKey(Context context, String provider, int index, String value) {
         prefs(context).edit().putString("key_" + provider + "_" + index, value).apply();
+    }
+
+    public static void clearAll(Context context) {
+        prefs(context).edit().clear().apply();
     }
 }

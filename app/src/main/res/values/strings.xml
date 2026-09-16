@@ -3,6 +3,11 @@
     <string name="btn_help">راهنما</string>
     <string name="btn_menu">منو</string>
     <string name="menu_settings">تنظیمات</string>
+    <string name="menu_exit_reset">خروج و پاک کردن اطلاعات</string>
+    <string name="confirm_reset_title">پاک کردن اطلاعات</string>
+    <string name="confirm_reset_message">همه تنظیمات و کلیدهای ذخیره‌شده پاک می‌شوند و از برنامه خارج می‌شوی. مطمئنی؟</string>
+    <string name="confirm_yes">بله</string>
+    <string name="confirm_no">انصراف</string>
     <string name="settings_title">تنظیمات</string>
     <string name="settings_language_label">زبان برنامه</string>
     <string name="settings_keys_label">پنج کلید Gemini گوگل</string>

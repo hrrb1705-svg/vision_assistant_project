@@ -141,9 +141,25 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new android.content.Intent(this, SettingsActivity.class));
                 return true;
             }
+            if (item.getItemId() == R.id.menu_exit_reset) {
+                confirmExitAndReset();
+                return true;
+            }
             return false;
         });
         popupMenu.show();
+    }
+
+    private void confirmExitAndReset() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.confirm_reset_title)
+                .setMessage(R.string.confirm_reset_message)
+                .setPositiveButton(R.string.confirm_yes, (dialog, which) -> {
+                    AppPrefs.clearAll(this);
+                    finishAffinity();
+                })
+                .setNegativeButton(R.string.confirm_no, null)
+                .show();
     }
 
     @Override
