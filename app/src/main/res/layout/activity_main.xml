@@ -40,30 +40,53 @@
         android:layout_height="1dp"
         android:importantForAccessibility="no" />
 
-    <Button
-        android:id="@+id/btnCaptureCamera"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:enabled="false"
-        android:text="@string/btn_capture_camera" />
-
-    <Button
-        android:id="@+id/btnChooseMedia"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:enabled="false"
-        android:text="@string/btn_choose_media" />
-
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_margin="8dp"
         android:gravity="center"
         android:textSize="16sp"
         android:accessibilityLiveRegion="polite"
         android:text="@string/status_ready" />
+
+    <!-- کلیدهای اصلی برنامه: در پایین‌ترین خط صفحه، کنار هم -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/btnCaptureCamera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:enabled="false"
+            android:text="@string/btn_capture_camera" />
+
+        <Button
+            android:id="@+id/btnChooseMedia"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:enabled="false"
+            android:text="@string/btn_choose_media" />
+
+        <Button
+            android:id="@+id/btnExit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_exit" />
+
+    </LinearLayout>
 
 </LinearLayout>

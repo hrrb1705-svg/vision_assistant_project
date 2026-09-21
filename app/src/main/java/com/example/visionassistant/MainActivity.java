@@ -8,9 +8,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
-import android.view.MenuItem;
 import android.widget.Button;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -56,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnMenu;
     private Button btnCaptureCamera;
     private Button btnChooseMedia;
+    private Button btnExit;
     private TextView tvStatus;
     private ImageCapture imageCapture;
     private ActivityResultLauncher<String> pickMediaLauncher;
@@ -81,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         btnMenu = findViewById(R.id.btnMenu);
         btnCaptureCamera = findViewById(R.id.btnCaptureCamera);
         btnChooseMedia = findViewById(R.id.btnChooseMedia);
+        btnExit = findViewById(R.id.btnExit);
         tvStatus = findViewById(R.id.tvStatus);
 
         pickMediaLauncher = registerForActivityResult(
@@ -97,9 +97,11 @@ public class MainActivity extends AppCompatActivity {
 
         btnCaptureCamera.setOnClickListener(v -> captureAndDescribe());
         btnChooseMedia.setOnClickListener(v -> pickMediaLauncher.launch("image/*"));
+        btnExit.setOnClickListener(v -> confirmExit());
         btnHelp.setOnClickListener(v ->
                 startActivity(new android.content.Intent(this, HelpActivity.class)));
-        btnMenu.setOnClickListener(this::showMainMenu);
+        btnMenu.setOnClickListener(v ->
+                startActivity(new android.content.Intent(this, SettingsActivity.class)));
     }
 
     @Override
@@ -133,31 +135,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showMainMenu(android.view.View anchor) {
-        PopupMenu popupMenu = new PopupMenu(this, anchor);
-        popupMenu.getMenuInflater().inflate(R.menu.main_menu, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener((MenuItem item) -> {
-            if (item.getItemId() == R.id.menu_settings) {
-                startActivity(new android.content.Intent(this, SettingsActivity.class));
-                return true;
-            }
-            if (item.getItemId() == R.id.menu_exit_reset) {
-                confirmExitAndReset();
-                return true;
-            }
-            return false;
-        });
-        popupMenu.show();
-    }
-
-    private void confirmExitAndReset() {
+    // کلید خروج فقط از برنامه خارج می‌شود؛ هیچ کلید یا تنظیماتی پاک نمی‌شود
+    private void confirmExit() {
         new AlertDialog.Builder(this)
-                .setTitle(R.string.confirm_reset_title)
-                .setMessage(R.string.confirm_reset_message)
-                .setPositiveButton(R.string.confirm_yes, (dialog, which) -> {
-                    AppPrefs.clearAll(this);
-                    finishAffinity();
-                })
+                .setTitle(R.string.confirm_exit_title)
+                .setMessage(R.string.confirm_exit_message)
+                .setPositiveButton(R.string.confirm_yes, (dialog, which) -> finishAffinity())
                 .setNegativeButton(R.string.confirm_no, null)
                 .show();
     }
@@ -284,6 +267,8 @@ public class MainActivity extends AppCompatActivity {
         String provider = AppPrefs.getActiveProvider(this);
         if (AppPrefs.PROVIDER_GOOGLE.equals(provider)) {
             sendToGemini(imageBytes);
+        } else if (AppPrefs.PROVIDER_XAI.equals(provider)) {
+            sendToXaiResponses(imageBytes);
         } else {
             sendToOpenAiCompatible(imageBytes, provider);
         }
@@ -448,6 +433,111 @@ public class MainActivity extends AppCompatActivity {
 
             showError(String.join("\n", errorLines));
         });
+    }
+
+    // قالب Responses API که Xai/Grok از آن استفاده می‌کند؛ با قالب OpenAI معمول (messages) فرق دارد
+    private void sendToXaiResponses(byte[] imageBytes) {
+        String provider = AppPrefs.PROVIDER_XAI;
+        String endpoint = AppPrefs.getEndpoint(this, provider);
+        String model = AppPrefs.getModel(this, provider);
+        if (endpoint == null || endpoint.trim().isEmpty()
+                || model == null || model.trim().isEmpty()) {
+            showError(getString(R.string.custom_not_configured));
+            return;
+        }
+        List<String> apiKeys = loadKeys(provider);
+        if (apiKeys.isEmpty()) {
+            showError(getString(R.string.no_keys_message));
+            return;
+        }
+        String finalEndpoint = endpoint.trim();
+        String finalModel = model.trim();
+
+        executor.execute(() -> {
+            String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+            List<String> errorLines = new ArrayList<>();
+
+            for (int i = 0; i < apiKeys.size(); i++) {
+                String apiKey = apiKeys.get(i);
+                try {
+                    JSONObject textPart = new JSONObject();
+                    textPart.put("type", "input_text");
+                    textPart.put("text", getString(R.string.prompt_describe));
+
+                    JSONObject imagePart = new JSONObject();
+                    imagePart.put("type", "input_image");
+                    imagePart.put("image_url", "data:image/jpeg;base64," + base64);
+
+                    JSONObject message = new JSONObject();
+                    message.put("role", "user");
+                    message.put("content", new JSONArray().put(textPart).put(imagePart));
+
+                    JSONObject body = new JSONObject();
+                    body.put("model", finalModel);
+                    body.put("input", new JSONArray().put(message));
+
+                    Request request = new Request.Builder()
+                            .url(finalEndpoint)
+                            .header("Authorization", "Bearer " + apiKey)
+                            .header("Content-Type", "application/json")
+                            .post(RequestBody.create(body.toString(),
+                                    MediaType.parse("application/json")))
+                            .build();
+
+                    try (Response response = httpClient.newCall(request).execute()) {
+                        String json = readResponseBody(response);
+
+                        if (response.isSuccessful()) {
+                            String result = extractResponsesApiText(new JSONObject(json));
+                            showResult(result);
+                            return;
+                        }
+
+                        errorLines.add(String.format(getString(R.string.key_status_line_format),
+                                i + 1, describeHttpError(response.code(), json)));
+                    }
+                } catch (Exception e) {
+                    errorLines.add(String.format(getString(R.string.key_status_line_format),
+                            i + 1, getString(R.string.generic_error_prefix) + e.getMessage()));
+                }
+            }
+
+            showError(String.join("\n", errorLines));
+        });
+    }
+
+    // خروجی Responses API یک ساختار output_text ساده یا آرایه output دارد؛ هر دو حالت را پوشش می‌دهیم
+    private static String extractResponsesApiText(JSONObject root) throws Exception {
+        if (root.has("output_text") && !root.isNull("output_text")) {
+            String direct = root.optString("output_text", "");
+            if (!direct.trim().isEmpty()) {
+                return direct;
+            }
+        }
+        StringBuilder combined = new StringBuilder();
+        if (root.has("output")) {
+            JSONArray output = root.getJSONArray("output");
+            for (int i = 0; i < output.length(); i++) {
+                JSONObject item = output.getJSONObject(i);
+                if (!item.has("content")) {
+                    continue;
+                }
+                JSONArray content = item.getJSONArray("content");
+                for (int j = 0; j < content.length(); j++) {
+                    JSONObject part = content.getJSONObject(j);
+                    if (part.has("text")) {
+                        if (combined.length() > 0) {
+                            combined.append("\n");
+                        }
+                        combined.append(part.getString("text"));
+                    }
+                }
+            }
+        }
+        if (combined.length() > 0) {
+            return combined.toString();
+        }
+        throw new Exception("unexpected response shape");
     }
 
     private String describeHttpError(int code, String rawJson) {

@@ -16,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class ServicesActivity extends AppCompatActivity {
 
     private static final String[] PROVIDERS = {
-            AppPrefs.PROVIDER_GOOGLE, AppPrefs.PROVIDER_GROQ, AppPrefs.PROVIDER_CUSTOM
+            AppPrefs.PROVIDER_GOOGLE, AppPrefs.PROVIDER_GROQ, AppPrefs.PROVIDER_XAI, AppPrefs.PROVIDER_CUSTOM
     };
 
     private Spinner spinnerProvider;
@@ -58,6 +58,7 @@ public class ServicesActivity extends AppCompatActivity {
         String[] labels = {
                 getString(R.string.provider_google),
                 getString(R.string.provider_groq),
+                getString(R.string.provider_xai),
                 getString(R.string.provider_custom)
         };
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,

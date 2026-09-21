@@ -10,12 +10,16 @@ public class AppPrefs {
 
     public static final String PROVIDER_GOOGLE = "google";
     public static final String PROVIDER_GROQ = "groq";
+    public static final String PROVIDER_XAI = "xai";
     public static final String PROVIDER_CUSTOM = "custom";
 
+    // این مقادیر بر اساس آزمایش موفق کاربر با ترماکس تنظیم شده‌اند
     public static final String GOOGLE_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta";
-    public static final String GOOGLE_DEFAULT_MODEL = "gemini-3.8-flash";
+    public static final String GOOGLE_DEFAULT_MODEL = "gemini-3.6-flash";
     public static final String GROQ_DEFAULT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-    public static final String GROQ_DEFAULT_MODEL = "";
+    public static final String GROQ_DEFAULT_MODEL = "qwen/qwen3.8-27b";
+    public static final String XAI_DEFAULT_ENDPOINT = "https://api.x.ai/v1/responses";
+    public static final String XAI_DEFAULT_MODEL = "grok-4.6";
 
     private static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -55,6 +59,9 @@ public class AppPrefs {
         if (PROVIDER_GROQ.equals(provider)) {
             return GROQ_DEFAULT_ENDPOINT;
         }
+        if (PROVIDER_XAI.equals(provider)) {
+            return XAI_DEFAULT_ENDPOINT;
+        }
         return "";
     }
 
@@ -78,6 +85,9 @@ public class AppPrefs {
         }
         if (PROVIDER_GROQ.equals(provider)) {
             return GROQ_DEFAULT_MODEL;
+        }
+        if (PROVIDER_XAI.equals(provider)) {
+            return XAI_DEFAULT_MODEL;
         }
         return "";
     }

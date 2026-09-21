@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">دستیار بینایی</string>
     <string name="btn_help">راهنما</string>
-    <string name="btn_menu">منو</string>
+    <string name="btn_menu">تنظیمات</string>
     <string name="menu_settings">تنظیمات</string>
-    <string name="menu_exit_reset">خروج و پاک کردن اطلاعات</string>
-    <string name="confirm_reset_title">پاک کردن اطلاعات</string>
-    <string name="confirm_reset_message">همه تنظیمات و کلیدهای ذخیره‌شده پاک می‌شوند و از برنامه خارج می‌شوی. مطمئنی؟</string>
+    <string name="btn_exit">خروج</string>
+    <string name="confirm_exit_title">خروج از برنامه</string>
+    <string name="confirm_exit_message">از برنامه خارج می‌شوی. اطلاعات و کلیدهای ذخیره‌شده پاک نمی‌شوند. مطمئنی؟</string>
     <string name="confirm_yes">بله</string>
     <string name="confirm_no">انصراف</string>
     <string name="settings_title">تنظیمات</string>
@@ -42,6 +42,7 @@
     <string name="provider_label">سرویس مورد استفاده</string>
     <string name="provider_google">گوگل (Gemini)</string>
     <string name="provider_groq">Groq</string>
+    <string name="provider_xai">Xai (Grok)</string>
     <string name="provider_custom">سایر</string>
     <string name="custom_section_label">تنظیمات سرویس دوم</string>
     <string name="custom_endpoint_label">آدرس اینترنتی سرویس (endpoint)</string>
