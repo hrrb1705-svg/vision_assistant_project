@@ -8,8 +8,11 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -56,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private Button btnChooseMedia;
     private Button btnExit;
     private TextView tvStatus;
+    private View followUpRow;
+    private EditText editQuestion;
+    private Button btnSend;
+    private Button btnSaveConversation;
     private ImageCapture imageCapture;
     private ActivityResultLauncher<String> pickMediaLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -64,6 +71,12 @@ public class MainActivity extends AppCompatActivity {
             .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
             .build();
+
+    // وضعیت گفتگوی جاری دربارهٔ یک تصویر؛ تا وقتی عکس تازه‌ای گرفته نشود همین‌جا می‌ماند
+    private final List<ChatTurn> conversationTurns = new ArrayList<>();
+    private byte[] conversationImageBytes = null;
+    // اگر یک سوال پیگیری در حال ارسال باشد، متن آن اینجا نگه داشته می‌شود تا اگر شکست خورد به کاربر برگردانده شود
+    private String pendingFollowUpQuestion = null;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -82,6 +95,10 @@ public class MainActivity extends AppCompatActivity {
         btnChooseMedia = findViewById(R.id.btnChooseMedia);
         btnExit = findViewById(R.id.btnExit);
         tvStatus = findViewById(R.id.tvStatus);
+        followUpRow = findViewById(R.id.followUpRow);
+        editQuestion = findViewById(R.id.editQuestion);
+        btnSend = findViewById(R.id.btnSend);
+        btnSaveConversation = findViewById(R.id.btnSaveConversation);
 
         pickMediaLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(), this::onMediaPicked);
@@ -101,7 +118,9 @@ public class MainActivity extends AppCompatActivity {
         btnHelp.setOnClickListener(v ->
                 startActivity(new android.content.Intent(this, HelpActivity.class)));
         btnMenu.setOnClickListener(v ->
-                startActivity(new android.content.Intent(this, SettingsActivity.class)));
+                startActivity(new android.content.Intent(this, MenuActivity.class)));
+        btnSend.setOnClickListener(v -> sendFollowUpQuestion());
+        btnSaveConversation.setOnClickListener(v -> saveCurrentConversation());
     }
 
     @Override
@@ -110,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         refreshReadyState();
     }
 
-    // بر اساس اینکه سرویس فعال، آدرس و مدل و حداقل یک کلید دارد یا نه، دو دکمه را فعال یا غیرفعال می‌کند
+    // بر اساس اینکه سرویس فعال، آدرس و مدل و حداقل یک کلید دارد یا نه، دکمه‌های گرفتن/انتخاب عکس را فعال یا غیرفعال می‌کند
     private void refreshReadyState() {
         String provider = AppPrefs.getActiveProvider(this);
         String endpoint = AppPrefs.getEndpoint(this, provider);
@@ -124,15 +143,26 @@ public class MainActivity extends AppCompatActivity {
         btnCaptureCamera.setEnabled(ready);
         btnChooseMedia.setEnabled(ready);
 
-        if (!ready) {
-            if (!hasKey) {
-                tvStatus.setText(R.string.no_keys_message);
+        // اگر یک گفتگو از قبل روی صفحه است، آن را با پیام آماده به کار جایگزین نمی‌کنیم
+        if (conversationTurns.isEmpty()) {
+            if (!ready) {
+                if (!hasKey) {
+                    tvStatus.setText(R.string.no_keys_message);
+                } else {
+                    tvStatus.setText(R.string.custom_not_configured);
+                }
             } else {
-                tvStatus.setText(R.string.custom_not_configured);
+                tvStatus.setText(R.string.status_ready);
             }
-        } else {
-            tvStatus.setText(R.string.status_ready);
         }
+
+        showFollowUpUi(!conversationTurns.isEmpty());
+    }
+
+    private void showFollowUpUi(boolean show) {
+        int visibility = show ? View.VISIBLE : View.GONE;
+        followUpRow.setVisibility(visibility);
+        btnSaveConversation.setVisibility(visibility);
     }
 
     // کلید خروج فقط از برنامه خارج می‌شود؛ هیچ کلید یا تنظیماتی پاک نمی‌شود
@@ -188,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCaptureSuccess(@NonNull ImageProxy image) {
                         byte[] bytes = imageProxyToJpegBytes(image);
                         image.close();
-                        sendToApi(bytes);
+                        startNewConversation(bytes);
                     }
 
                     @Override
@@ -205,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
         tvStatus.setText(R.string.capturing_image);
         executor.execute(() -> {
             byte[] bytes = fileUriToJpegBytes(uri);
-            sendToApi(bytes);
+            startNewConversation(bytes);
         });
     }
 
@@ -245,33 +275,121 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
+        runOnUiThread(() -> new AlertDialog.Builder(this)
+                .setTitle(R.string.error_dialog_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.error_dialog_ok, null)
+                .show());
+    }
+
+    // --- شروع یک گفتگوی تازه با یک عکس تازه ---
+    private void startNewConversation(byte[] imageBytes) {
+        if (imageBytes.length == 0) {
+            showError(getString(R.string.empty_image));
+            runOnUiThread(this::refreshReadyState);
+            return;
+        }
+        conversationTurns.clear();
+        conversationImageBytes = imageBytes;
+        conversationTurns.add(new ChatTurn("user", getString(R.string.prompt_describe), true));
+        pendingFollowUpQuestion = null;
+
         runOnUiThread(() -> {
-            tvStatus.setText(R.string.status_ready);
-            new AlertDialog.Builder(this)
-                    .setTitle(R.string.error_dialog_title)
-                    .setMessage(message)
-                    .setPositiveButton(R.string.error_dialog_ok, null)
-                    .show();
+            tvStatus.setText(R.string.capturing_image);
+            setConversationBusy(true);
+        });
+
+        sendConversation();
+    }
+
+    // --- ارسال یک سوال پیگیری دربارهٔ همان عکس ---
+    private void sendFollowUpQuestion() {
+        String question = editQuestion.getText().toString().trim();
+        if (question.isEmpty() || conversationImageBytes == null) {
+            return;
+        }
+        conversationTurns.add(new ChatTurn("user", question, false));
+        pendingFollowUpQuestion = question;
+        editQuestion.setText("");
+
+        tvStatus.setText(renderConversation() + "\n\n" + getString(R.string.sending_followup_suffix));
+        setConversationBusy(true);
+
+        sendConversation();
+    }
+
+    private void setConversationBusy(boolean busy) {
+        btnSend.setEnabled(!busy);
+        editQuestion.setEnabled(!busy);
+        btnCaptureCamera.setEnabled(!busy);
+        btnChooseMedia.setEnabled(!busy);
+        btnSaveConversation.setEnabled(!busy && !conversationTurns.isEmpty());
+    }
+
+    // متن قابل‌نمایش کل گفتگو؛ اولین پیام کاربر (دستور پیش‌فرض توصیف تصویر) نشان داده نمی‌شود
+    private String renderConversation() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < conversationTurns.size(); i++) {
+            ChatTurn t = conversationTurns.get(i);
+            if (t.hasImage) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append("\n\n");
+            }
+            if ("assistant".equals(t.role)) {
+                sb.append(getString(R.string.chat_assistant_prefix)).append(t.text);
+            } else {
+                sb.append(getString(R.string.chat_you_prefix)).append(t.text);
+            }
+        }
+        return sb.toString();
+    }
+
+    private void onConversationReply(String replyText) {
+        runOnUiThread(() -> {
+            conversationTurns.add(new ChatTurn("assistant", replyText, false));
+            pendingFollowUpQuestion = null;
+            tvStatus.setText(renderConversation());
+            setConversationBusy(false);
+            showFollowUpUi(true);
         });
     }
 
-    private void showResult(String text) {
-        runOnUiThread(() -> tvStatus.setText(text));
+    private void onConversationFailed(String joinedErrors) {
+        runOnUiThread(() -> {
+            if (pendingFollowUpQuestion != null && !conversationTurns.isEmpty()) {
+                // این شکست مربوط به یک سوال پیگیری بود؛ همان سوال را برمی‌گردانیم تا دوباره فرستاده شود
+                conversationTurns.remove(conversationTurns.size() - 1);
+                editQuestion.setText(pendingFollowUpQuestion);
+                tvStatus.setText(renderConversation());
+            } else {
+                // این شکست مربوط به توصیف اولیهٔ تصویر بود؛ کل گفتگو را کنار می‌گذاریم
+                conversationTurns.clear();
+                conversationImageBytes = null;
+            }
+            pendingFollowUpQuestion = null;
+            setConversationBusy(false);
+            refreshReadyState();
+            showError(joinedErrors);
+        });
     }
 
-    private void sendToApi(byte[] imageBytes) {
-        if (imageBytes.length == 0) {
-            showError(getString(R.string.empty_image));
+    private void saveCurrentConversation() {
+        if (conversationImageBytes == null || conversationTurns.isEmpty()) {
             return;
         }
-        String provider = AppPrefs.getActiveProvider(this);
-        if (AppPrefs.PROVIDER_GOOGLE.equals(provider)) {
-            sendToGemini(imageBytes);
-        } else if (AppPrefs.PROVIDER_XAI.equals(provider)) {
-            sendToXaiResponses(imageBytes);
-        } else {
-            sendToOpenAiCompatible(imageBytes, provider);
-        }
+        List<ChatTurn> snapshot = new ArrayList<>(conversationTurns);
+        byte[] imageSnapshot = conversationImageBytes;
+        executor.execute(() -> {
+            try {
+                ConversationStore.saveNewConversation(this, imageSnapshot, snapshot);
+                runOnUiThread(() -> Toast.makeText(this,
+                        R.string.conversation_saved, Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                showError(getString(R.string.save_failed_prefix) + e.getMessage());
+            }
+        });
     }
 
     // کلیدهای واردشده برای یک سرویس مشخص را می‌خواند و خانه‌های خالی را کنار می‌گذارد
@@ -286,10 +404,22 @@ public class MainActivity extends AppCompatActivity {
         return keys;
     }
 
-    private void sendToGemini(byte[] imageBytes) {
+    // بر اساس سرویس فعال، درخواست کل گفتگو (شامل تاریخچه) را با قالب همان سرویس می‌فرستد
+    private void sendConversation() {
+        String provider = AppPrefs.getActiveProvider(this);
+        if (AppPrefs.PROVIDER_GOOGLE.equals(provider)) {
+            sendGeminiConversation();
+        } else if (AppPrefs.PROVIDER_XAI.equals(provider)) {
+            sendXaiConversation();
+        } else {
+            sendOpenAiCompatibleConversation(provider);
+        }
+    }
+
+    private void sendGeminiConversation() {
         List<String> apiKeys = loadKeys(AppPrefs.PROVIDER_GOOGLE);
         if (apiKeys.isEmpty()) {
-            showError(getString(R.string.no_keys_message));
+            onConversationFailed(getString(R.string.no_keys_message));
             return;
         }
         String endpointBase = AppPrefs.getEndpoint(this, AppPrefs.PROVIDER_GOOGLE);
@@ -298,6 +428,9 @@ public class MainActivity extends AppCompatActivity {
             endpointBase = endpointBase.substring(0, endpointBase.length() - 1);
         }
         String url = endpointBase + "/models/" + model + ":generateContent";
+        String finalUrl = url;
+        List<ChatTurn> turnsSnapshot = new ArrayList<>(conversationTurns);
+        byte[] imageBytes = conversationImageBytes;
 
         executor.execute(() -> {
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
@@ -306,24 +439,27 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < apiKeys.size(); i++) {
                 String apiKey = apiKeys.get(i);
                 try {
-                    JSONObject inlineData = new JSONObject();
-                    inlineData.put("mime_type", "image/jpeg");
-                    inlineData.put("data", base64);
-
-                    JSONObject imagePart = new JSONObject();
-                    imagePart.put("inline_data", inlineData);
-
-                    JSONObject textPart = new JSONObject();
-                    textPart.put("text", getString(R.string.prompt_describe));
-
-                    JSONObject content = new JSONObject();
-                    content.put("parts", new JSONArray().put(textPart).put(imagePart));
+                    JSONArray contents = new JSONArray();
+                    for (ChatTurn turn : turnsSnapshot) {
+                        JSONArray parts = new JSONArray();
+                        parts.put(new JSONObject().put("text", turn.text));
+                        if (turn.hasImage) {
+                            JSONObject inlineData = new JSONObject();
+                            inlineData.put("mime_type", "image/jpeg");
+                            inlineData.put("data", base64);
+                            parts.put(new JSONObject().put("inline_data", inlineData));
+                        }
+                        JSONObject content = new JSONObject();
+                        content.put("role", "assistant".equals(turn.role) ? "model" : "user");
+                        content.put("parts", parts);
+                        contents.put(content);
+                    }
 
                     JSONObject body = new JSONObject();
-                    body.put("contents", new JSONArray().put(content));
+                    body.put("contents", contents);
 
                     Request request = new Request.Builder()
-                            .url(url)
+                            .url(finalUrl)
                             .header("x-goog-api-key", apiKey)
                             .header("Content-Type", "application/json")
                             .post(RequestBody.create(body.toString(),
@@ -341,7 +477,7 @@ public class MainActivity extends AppCompatActivity {
                                     .getJSONArray("parts")
                                     .getJSONObject(0)
                                     .getString("text");
-                            showResult(result);
+                            onConversationReply(result);
                             return;
                         }
 
@@ -354,26 +490,28 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            showError(String.join("\n", errorLines));
+            onConversationFailed(String.join("\n", errorLines));
         });
     }
 
     // قالب سازگار با OpenAI (messages / content)، برای Groq و هر سرویس دیگری که همین قالب رایج را پشتیبانی کند
-    private void sendToOpenAiCompatible(byte[] imageBytes, String provider) {
+    private void sendOpenAiCompatibleConversation(String provider) {
         String endpoint = AppPrefs.getEndpoint(this, provider);
         String model = AppPrefs.getModel(this, provider);
         if (endpoint == null || endpoint.trim().isEmpty()
                 || model == null || model.trim().isEmpty()) {
-            showError(getString(R.string.custom_not_configured));
+            onConversationFailed(getString(R.string.custom_not_configured));
             return;
         }
         List<String> apiKeys = loadKeys(provider);
         if (apiKeys.isEmpty()) {
-            showError(getString(R.string.no_keys_message));
+            onConversationFailed(getString(R.string.no_keys_message));
             return;
         }
         String finalEndpoint = endpoint.trim();
         String finalModel = model.trim();
+        List<ChatTurn> turnsSnapshot = new ArrayList<>(conversationTurns);
+        byte[] imageBytes = conversationImageBytes;
 
         executor.execute(() -> {
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
@@ -382,24 +520,32 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < apiKeys.size(); i++) {
                 String apiKey = apiKeys.get(i);
                 try {
-                    JSONObject imageUrl = new JSONObject();
-                    imageUrl.put("url", "data:image/jpeg;base64," + base64);
+                    JSONArray messages = new JSONArray();
+                    for (ChatTurn turn : turnsSnapshot) {
+                        JSONObject message = new JSONObject();
+                        message.put("role", "assistant".equals(turn.role) ? "assistant" : "user");
+                        if (turn.hasImage) {
+                            JSONObject imageUrl = new JSONObject();
+                            imageUrl.put("url", "data:image/jpeg;base64," + base64);
 
-                    JSONObject imagePart = new JSONObject();
-                    imagePart.put("type", "image_url");
-                    imagePart.put("image_url", imageUrl);
+                            JSONObject imagePart = new JSONObject();
+                            imagePart.put("type", "image_url");
+                            imagePart.put("image_url", imageUrl);
 
-                    JSONObject textPart = new JSONObject();
-                    textPart.put("type", "text");
-                    textPart.put("text", getString(R.string.prompt_describe));
+                            JSONObject textPart = new JSONObject();
+                            textPart.put("type", "text");
+                            textPart.put("text", turn.text);
 
-                    JSONObject message = new JSONObject();
-                    message.put("role", "user");
-                    message.put("content", new JSONArray().put(textPart).put(imagePart));
+                            message.put("content", new JSONArray().put(textPart).put(imagePart));
+                        } else {
+                            message.put("content", turn.text);
+                        }
+                        messages.put(message);
+                    }
 
                     JSONObject body = new JSONObject();
                     body.put("model", finalModel);
-                    body.put("messages", new JSONArray().put(message));
+                    body.put("messages", messages);
 
                     Request request = new Request.Builder()
                             .url(finalEndpoint)
@@ -418,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
                                     .getJSONObject(0)
                                     .getJSONObject("message")
                                     .getString("content");
-                            showResult(result);
+                            onConversationReply(result);
                             return;
                         }
 
@@ -431,27 +577,29 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            showError(String.join("\n", errorLines));
+            onConversationFailed(String.join("\n", errorLines));
         });
     }
 
     // قالب Responses API که Xai/Grok از آن استفاده می‌کند؛ با قالب OpenAI معمول (messages) فرق دارد
-    private void sendToXaiResponses(byte[] imageBytes) {
+    private void sendXaiConversation() {
         String provider = AppPrefs.PROVIDER_XAI;
         String endpoint = AppPrefs.getEndpoint(this, provider);
         String model = AppPrefs.getModel(this, provider);
         if (endpoint == null || endpoint.trim().isEmpty()
                 || model == null || model.trim().isEmpty()) {
-            showError(getString(R.string.custom_not_configured));
+            onConversationFailed(getString(R.string.custom_not_configured));
             return;
         }
         List<String> apiKeys = loadKeys(provider);
         if (apiKeys.isEmpty()) {
-            showError(getString(R.string.no_keys_message));
+            onConversationFailed(getString(R.string.no_keys_message));
             return;
         }
         String finalEndpoint = endpoint.trim();
         String finalModel = model.trim();
+        List<ChatTurn> turnsSnapshot = new ArrayList<>(conversationTurns);
+        byte[] imageBytes = conversationImageBytes;
 
         executor.execute(() -> {
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
@@ -460,21 +608,30 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < apiKeys.size(); i++) {
                 String apiKey = apiKeys.get(i);
                 try {
-                    JSONObject textPart = new JSONObject();
-                    textPart.put("type", "input_text");
-                    textPart.put("text", getString(R.string.prompt_describe));
+                    JSONArray input = new JSONArray();
+                    for (ChatTurn turn : turnsSnapshot) {
+                        boolean isAssistant = "assistant".equals(turn.role);
+                        JSONObject textPart = new JSONObject();
+                        textPart.put("type", isAssistant ? "output_text" : "input_text");
+                        textPart.put("text", turn.text);
 
-                    JSONObject imagePart = new JSONObject();
-                    imagePart.put("type", "input_image");
-                    imagePart.put("image_url", "data:image/jpeg;base64," + base64);
+                        JSONArray content = new JSONArray().put(textPart);
+                        if (turn.hasImage) {
+                            JSONObject imagePart = new JSONObject();
+                            imagePart.put("type", "input_image");
+                            imagePart.put("image_url", "data:image/jpeg;base64," + base64);
+                            content.put(imagePart);
+                        }
 
-                    JSONObject message = new JSONObject();
-                    message.put("role", "user");
-                    message.put("content", new JSONArray().put(textPart).put(imagePart));
+                        JSONObject message = new JSONObject();
+                        message.put("role", isAssistant ? "assistant" : "user");
+                        message.put("content", content);
+                        input.put(message);
+                    }
 
                     JSONObject body = new JSONObject();
                     body.put("model", finalModel);
-                    body.put("input", new JSONArray().put(message));
+                    body.put("input", input);
 
                     Request request = new Request.Builder()
                             .url(finalEndpoint)
@@ -489,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
 
                         if (response.isSuccessful()) {
                             String result = extractResponsesApiText(new JSONObject(json));
-                            showResult(result);
+                            onConversationReply(result);
                             return;
                         }
 
@@ -502,7 +659,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            showError(String.join("\n", errorLines));
+            onConversationFailed(String.join("\n", errorLines));
         });
     }
 

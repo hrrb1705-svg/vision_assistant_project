@@ -40,16 +40,59 @@
         android:layout_height="1dp"
         android:importantForAccessibility="no" />
 
-    <TextView
-        android:id="@+id/tvStatus"
+    <!-- با ScrollView کل متن گفتگو قابل دسترس است، حتی اگر طولانی‌تر از صفحه باشد -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_margin="8dp"
-        android:gravity="center"
-        android:textSize="16sp"
-        android:accessibilityLiveRegion="polite"
-        android:text="@string/status_ready" />
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/status_ready" />
+    </ScrollView>
+
+    <!-- ردیف پرسش دربارهٔ تصویر: فقط وقتی یک گفتگو فعال باشد نمایش داده می‌شود -->
+    <LinearLayout
+        android:id="@+id/followUpRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/editQuestion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="48dp"
+            android:inputType="textMultiLine|textCapSentences"
+            android:hint="@string/hint_ask_question" />
+
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:minHeight="48dp"
+            android:text="@string/btn_send_question" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnSaveConversation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:minHeight="48dp"
+        android:visibility="gone"
+        android:text="@string/btn_save_conversation" />
 
     <!-- کلیدهای اصلی برنامه: در پایین‌ترین خط صفحه، کنار هم -->
     <LinearLayout

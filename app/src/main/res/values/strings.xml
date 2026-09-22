@@ -1,8 +1,23 @@
 <resources>
     <string name="app_name">دستیار بینایی</string>
     <string name="btn_help">راهنما</string>
-    <string name="btn_menu">تنظیمات</string>
+    <string name="btn_menu">منو</string>
     <string name="menu_settings">تنظیمات</string>
+    <string name="menu_title">منو</string>
+    <string name="recent_conversations_title">گفتگوهای اخیر</string>
+    <string name="no_conversations_message">هنوز هیچ گفتگویی ذخیره نشده است</string>
+    <string name="rename_conversation">تغییر نام گفتگو</string>
+    <string name="delete_conversation">حذف گفتگو</string>
+    <string name="confirm_delete_conversation_message">این گفتگو و عکس آن برای همیشه پاک می‌شود. مطمئنی؟</string>
+    <string name="conversation_image_description">تصویر مربوط به این گفتگو</string>
+    <string name="chat_you_prefix">شما: </string>
+    <string name="chat_assistant_prefix">دستیار: </string>
+    <string name="hint_ask_question">سوال خود را دربارهٔ این تصویر بنویس</string>
+    <string name="btn_send_question">ارسال پیام</string>
+    <string name="btn_save_conversation">ذخیره گفتگو</string>
+    <string name="conversation_saved">گفتگو ذخیره شد</string>
+    <string name="save_failed_prefix">ذخیره گفتگو ناموفق بود: </string>
+    <string name="sending_followup_suffix">در حال ارسال سوال…</string>
     <string name="btn_exit">خروج</string>
     <string name="confirm_exit_title">خروج از برنامه</string>
     <string name="confirm_exit_message">از برنامه خارج می‌شوی. اطلاعات و کلیدهای ذخیره‌شده پاک نمی‌شوند. مطمئنی؟</string>

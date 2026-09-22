@@ -34,5 +34,13 @@
             android:name=".HelpActivity"
             android:label="@string/btn_help"
             android:exported="false" />
+        <activity
+            android:name=".MenuActivity"
+            android:label="@string/menu_title"
+            android:exported="false" />
+        <activity
+            android:name=".ConversationViewActivity"
+            android:label="@string/recent_conversations_title"
+            android:exported="false" />
     </application>
 </manifest>
