@@ -1,40 +1,30 @@
 package com.example.visionassistant;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import com.google.common.util.concurrent.ListenableFuture;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -50,21 +40,22 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int REQUEST_PERMISSIONS = 1001;
+    // برای دریافت یک گفتگوی ادامه‌یافته از صفحهٔ ConversationViewActivity
+    public static final String EXTRA_CONTINUE_IMAGE_PATH = "continue_image_path";
+    public static final String EXTRA_CONTINUE_CONTEXT_JSON = "continue_context_json";
+    public static final String EXTRA_CONTINUE_QUESTION = "continue_question";
 
-    private PreviewView viewFinder;
     private Button btnHelp;
     private Button btnMenu;
-    private Button btnCaptureCamera;
-    private Button btnChooseMedia;
+    private Button btnAttach;
     private Button btnExit;
     private TextView tvStatus;
-    private View followUpRow;
+    private ListView listTurns;
+    private ArrayAdapter<String> turnsAdapter;
     private EditText editQuestion;
     private Button btnSend;
     private Button btnSaveConversation;
-    private ImageCapture imageCapture;
-    private ActivityResultLauncher<String> pickMediaLauncher;
+    private ActivityResultLauncher<Intent> attachmentLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
@@ -72,11 +63,14 @@ public class MainActivity extends AppCompatActivity {
             .readTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
             .build();
 
-    // وضعیت گفتگوی جاری دربارهٔ یک تصویر؛ تا وقتی عکس تازه‌ای گرفته نشود همین‌جا می‌ماند
+    // وضعیت گفتگوی جاری دربارهٔ یک تصویر؛ تا وقتی گفتگوی تازه‌ای شروع نشود همین‌جا می‌ماند
     private final List<ChatTurn> conversationTurns = new ArrayList<>();
     private byte[] conversationImageBytes = null;
+    // تصویری که با کلید پیوست‌ها انتخاب شده ولی هنوز گفتگویی با آن شروع نشده
+    private byte[] pendingAttachedImageBytes = null;
     // اگر یک سوال پیگیری در حال ارسال باشد، متن آن اینجا نگه داشته می‌شود تا اگر شکست خورد به کاربر برگردانده شود
     private String pendingFollowUpQuestion = null;
+    private boolean isBusy = false;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -88,39 +82,46 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        viewFinder = findViewById(R.id.viewFinder);
         btnHelp = findViewById(R.id.btnHelp);
         btnMenu = findViewById(R.id.btnMenu);
-        btnCaptureCamera = findViewById(R.id.btnCaptureCamera);
-        btnChooseMedia = findViewById(R.id.btnChooseMedia);
+        btnAttach = findViewById(R.id.btnAttach);
         btnExit = findViewById(R.id.btnExit);
         tvStatus = findViewById(R.id.tvStatus);
-        followUpRow = findViewById(R.id.followUpRow);
+        listTurns = findViewById(R.id.listTurns);
         editQuestion = findViewById(R.id.editQuestion);
         btnSend = findViewById(R.id.btnSend);
         btnSaveConversation = findViewById(R.id.btnSaveConversation);
 
-        pickMediaLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(), this::onMediaPicked);
+        turnsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
+        listTurns.setAdapter(turnsAdapter);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
-                    REQUEST_PERMISSIONS);
-        } else {
-            startCamera();
-        }
+        attachmentLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(), this::onAttachmentResult);
 
-        btnCaptureCamera.setOnClickListener(v -> captureAndDescribe());
-        btnChooseMedia.setOnClickListener(v -> pickMediaLauncher.launch("image/*"));
+        btnAttach.setOnClickListener(v ->
+                attachmentLauncher.launch(new Intent(this, AttachmentActivity.class)));
         btnExit.setOnClickListener(v -> confirmExit());
         btnHelp.setOnClickListener(v ->
-                startActivity(new android.content.Intent(this, HelpActivity.class)));
+                startActivity(new Intent(this, HelpActivity.class)));
         btnMenu.setOnClickListener(v ->
-                startActivity(new android.content.Intent(this, MenuActivity.class)));
-        btnSend.setOnClickListener(v -> sendFollowUpQuestion());
+                startActivity(new Intent(this, MenuActivity.class)));
+        btnSend.setOnClickListener(v -> onSendClicked());
         btnSaveConversation.setOnClickListener(v -> saveCurrentConversation());
+
+        editQuestion.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                updateSendEnabled();
+            }
+        });
+
+        handleContinueIntentIfPresent(getIntent());
     }
 
     @Override
@@ -129,40 +130,92 @@ public class MainActivity extends AppCompatActivity {
         refreshReadyState();
     }
 
-    // بر اساس اینکه سرویس فعال، آدرس و مدل و حداقل یک کلید دارد یا نه، دکمه‌های گرفتن/انتخاب عکس را فعال یا غیرفعال می‌کند
-    private void refreshReadyState() {
+    // --- دریافت یک گفتگوی ادامه‌یافته از صفحهٔ گفتگوهای ذخیره‌شده ---
+    private void handleContinueIntentIfPresent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        String imagePath = intent.getStringExtra(EXTRA_CONTINUE_IMAGE_PATH);
+        String question = intent.getStringExtra(EXTRA_CONTINUE_QUESTION);
+        String contextJson = intent.getStringExtra(EXTRA_CONTINUE_CONTEXT_JSON);
+        if (imagePath == null || question == null) {
+            return;
+        }
+
+        executor.execute(() -> {
+            byte[] imageBytes = readFileBytes(imagePath);
+            if (imageBytes.length == 0) {
+                runOnUiThread(() -> showError(getString(R.string.empty_image)));
+                return;
+            }
+
+            List<ChatTurn> contextTurns = new ArrayList<>();
+            try {
+                if (contextJson != null) {
+                    JSONArray arr = new JSONArray(contextJson);
+                    for (int i = 0; i < arr.length(); i++) {
+                        JSONObject m = arr.getJSONObject(i);
+                        contextTurns.add(new ChatTurn(m.getString("role"), m.getString("text"), false));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+
+            runOnUiThread(() -> {
+                conversationTurns.clear();
+                conversationImageBytes = imageBytes;
+                pendingAttachedImageBytes = null;
+                conversationTurns.add(new ChatTurn("user", getString(R.string.prompt_describe), true));
+                conversationTurns.addAll(contextTurns);
+                conversationTurns.add(new ChatTurn("user", question, false));
+                pendingFollowUpQuestion = question;
+
+                refreshTurnsList();
+                tvStatus.setText(getString(R.string.sending_followup_suffix));
+                setConversationBusy(true);
+                sendConversation();
+            });
+        });
+    }
+
+    // بر اساس اینکه سرویس فعال، آدرس و مدل و حداقل یک کلید دارد یا نه، کلید پیوست‌ها را فعال یا غیرفعال می‌کند
+    private boolean isServiceReady() {
         String provider = AppPrefs.getActiveProvider(this);
         String endpoint = AppPrefs.getEndpoint(this, provider);
         String model = AppPrefs.getModel(this, provider);
         boolean hasKey = !loadKeys(provider).isEmpty();
-
-        boolean ready = endpoint != null && !endpoint.trim().isEmpty()
+        return endpoint != null && !endpoint.trim().isEmpty()
                 && model != null && !model.trim().isEmpty()
                 && hasKey;
+    }
 
-        btnCaptureCamera.setEnabled(ready);
-        btnChooseMedia.setEnabled(ready);
+    private void refreshReadyState() {
+        boolean ready = isServiceReady();
+        btnAttach.setEnabled(ready && !isBusy);
 
-        // اگر یک گفتگو از قبل روی صفحه است، آن را با پیام آماده به کار جایگزین نمی‌کنیم
-        if (conversationTurns.isEmpty()) {
+        if (conversationTurns.isEmpty() && pendingAttachedImageBytes == null) {
             if (!ready) {
-                if (!hasKey) {
-                    tvStatus.setText(R.string.no_keys_message);
-                } else {
-                    tvStatus.setText(R.string.custom_not_configured);
-                }
+                boolean hasKey = !loadKeys(AppPrefs.getActiveProvider(this)).isEmpty();
+                tvStatus.setText(hasKey ? R.string.custom_not_configured : R.string.no_keys_message);
             } else {
                 tvStatus.setText(R.string.status_ready);
             }
         }
 
-        showFollowUpUi(!conversationTurns.isEmpty());
+        updateSendEnabled();
     }
 
-    private void showFollowUpUi(boolean show) {
-        int visibility = show ? View.VISIBLE : View.GONE;
-        followUpRow.setVisibility(visibility);
-        btnSaveConversation.setVisibility(visibility);
+    private void updateSendEnabled() {
+        boolean hasQuestion = !editQuestion.getText().toString().trim().isEmpty();
+        boolean enabled;
+        if (!conversationTurns.isEmpty()) {
+            enabled = hasQuestion && !isBusy;
+        } else {
+            enabled = pendingAttachedImageBytes != null && !isBusy;
+        }
+        btnSend.setEnabled(enabled);
+        btnSaveConversation.setVisibility(
+                (!conversationTurns.isEmpty() && conversationImageBytes != null) ? View.VISIBLE : View.GONE);
     }
 
     // کلید خروج فقط از برنامه خارج می‌شود؛ هیچ کلید یا تنظیماتی پاک نمی‌شود
@@ -175,136 +228,97 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_PERMISSIONS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
-            } else {
-                tvStatus.setText(R.string.permission_denied);
-            }
-        }
-    }
-
-    private void startCamera() {
-        ListenableFuture<ProcessCameraProvider> future =
-                ProcessCameraProvider.getInstance(this);
-        future.addListener(() -> {
-            try {
-                ProcessCameraProvider provider = future.get();
-                Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
-                imageCapture = new ImageCapture.Builder().build();
-                provider.unbindAll();
-                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview, imageCapture);
-            } catch (Exception e) {
-                tvStatus.setText(getString(R.string.error_camera_start_prefix) + e.getMessage());
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    private void captureAndDescribe() {
-        if (imageCapture == null) {
-            tvStatus.setText(R.string.camera_not_ready);
-            return;
-        }
-        tvStatus.setText(R.string.capturing_image);
-        imageCapture.takePicture(ContextCompat.getMainExecutor(this),
-                new ImageCapture.OnImageCapturedCallback() {
-                    @Override
-                    public void onCaptureSuccess(@NonNull ImageProxy image) {
-                        byte[] bytes = imageProxyToJpegBytes(image);
-                        image.close();
-                        startNewConversation(bytes);
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException exception) {
-                        tvStatus.setText(getString(R.string.error_capture_prefix) + exception.getMessage());
-                    }
-                });
-    }
-
-    private void onMediaPicked(Uri uri) {
-        if (uri == null) {
-            return;
-        }
-        tvStatus.setText(R.string.capturing_image);
-        executor.execute(() -> {
-            byte[] bytes = fileUriToJpegBytes(uri);
-            startNewConversation(bytes);
-        });
-    }
-
-    private byte[] fileUriToJpegBytes(Uri uri) {
-        try (InputStream is = getContentResolver().openInputStream(uri)) {
-            if (is == null) {
-                return new byte[0];
-            }
-            Bitmap bitmap = BitmapFactory.decodeStream(is);
-            if (bitmap == null) {
-                return new byte[0];
-            }
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out);
-            return out.toByteArray();
-        } catch (Exception e) {
-            return new byte[0];
-        }
-    }
-
-    private byte[] imageProxyToJpegBytes(ImageProxy image) {
-        try {
-            ImageProxy.PlaneProxy[] planes = image.getPlanes();
-            java.nio.ByteBuffer buffer = planes[0].getBuffer();
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            if (bitmap == null) {
-                return bytes;
-            }
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out);
-            return out.toByteArray();
-        } catch (Exception e) {
-            return new byte[0];
-        }
-    }
-
     private void showError(String message) {
-        runOnUiThread(() -> new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle(R.string.error_dialog_title)
                 .setMessage(message)
                 .setPositiveButton(R.string.error_dialog_ok, null)
-                .show());
+                .show();
     }
 
-    // --- شروع یک گفتگوی تازه با یک عکس تازه ---
-    private void startNewConversation(byte[] imageBytes) {
+    // --- نتیجهٔ صفحهٔ پیوست‌ها: یا عکس گرفته شده یا فایلی انتخاب شده ---
+    private void onAttachmentResult(androidx.activity.result.ActivityResult result) {
+        if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+            return;
+        }
+        String path = result.getData().getStringExtra(AttachmentActivity.RESULT_EXTRA_PATH);
+        if (path == null) {
+            return;
+        }
+        executor.execute(() -> {
+            byte[] bytes = readFileBytes(path);
+            runOnUiThread(() -> onImageAttached(bytes));
+        });
+    }
+
+    private void onImageAttached(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            showError(getString(R.string.empty_image));
+            return;
+        }
+        if (!conversationTurns.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.warn_replace_conversation_title)
+                    .setMessage(R.string.warn_replace_conversation_message)
+                    .setPositiveButton(R.string.confirm_yes, (d, w) -> {
+                        resetToReadyState();
+                        setPendingImage(bytes);
+                    })
+                    .setNegativeButton(R.string.confirm_no, null)
+                    .show();
+        } else {
+            setPendingImage(bytes);
+        }
+    }
+
+    private void setPendingImage(byte[] bytes) {
+        pendingAttachedImageBytes = bytes;
+        tvStatus.setText(R.string.image_attached_status);
+        updateSendEnabled();
+    }
+
+    // --- کلید ارسال: یا گفتگوی تازه شروع می‌کند یا سوال پیگیری می‌فرستد ---
+    private void onSendClicked() {
+        String question = editQuestion.getText().toString().trim();
+        if (conversationTurns.isEmpty()) {
+            if (pendingAttachedImageBytes == null) {
+                showError(getString(R.string.need_image_first));
+                return;
+            }
+            byte[] imageBytes = pendingAttachedImageBytes;
+            pendingAttachedImageBytes = null;
+            startNewConversation(imageBytes, question);
+        } else {
+            if (question.isEmpty()) {
+                return;
+            }
+            sendFollowUpQuestion(question);
+        }
+    }
+
+    // --- شروع یک گفتگوی تازه با یک عکس تازه و سوال اختیاری کاربر ---
+    private void startNewConversation(byte[] imageBytes, String questionText) {
         if (imageBytes.length == 0) {
             showError(getString(R.string.empty_image));
-            runOnUiThread(this::refreshReadyState);
+            refreshReadyState();
             return;
         }
         conversationTurns.clear();
         conversationImageBytes = imageBytes;
-        conversationTurns.add(new ChatTurn("user", getString(R.string.prompt_describe), true));
+        String firstText = questionText.isEmpty() ? getString(R.string.prompt_describe) : questionText;
+        conversationTurns.add(new ChatTurn("user", firstText, true));
         pendingFollowUpQuestion = null;
+        editQuestion.setText("");
 
-        runOnUiThread(() -> {
-            tvStatus.setText(R.string.capturing_image);
-            setConversationBusy(true);
-        });
+        refreshTurnsList();
+        tvStatus.setText(R.string.capturing_image);
+        setConversationBusy(true);
 
         sendConversation();
     }
 
     // --- ارسال یک سوال پیگیری دربارهٔ همان عکس ---
-    private void sendFollowUpQuestion() {
-        String question = editQuestion.getText().toString().trim();
+    private void sendFollowUpQuestion(String question) {
         if (question.isEmpty() || conversationImageBytes == null) {
             return;
         }
@@ -312,47 +326,51 @@ public class MainActivity extends AppCompatActivity {
         pendingFollowUpQuestion = question;
         editQuestion.setText("");
 
-        tvStatus.setText(renderConversation() + "\n\n" + getString(R.string.sending_followup_suffix));
+        refreshTurnsList();
+        tvStatus.setText(R.string.sending_followup_suffix);
         setConversationBusy(true);
 
         sendConversation();
     }
 
     private void setConversationBusy(boolean busy) {
-        btnSend.setEnabled(!busy);
+        isBusy = busy;
+        btnSend.setEnabled(false);
         editQuestion.setEnabled(!busy);
-        btnCaptureCamera.setEnabled(!busy);
-        btnChooseMedia.setEnabled(!busy);
+        btnAttach.setEnabled(!busy && isServiceReady());
         btnSaveConversation.setEnabled(!busy && !conversationTurns.isEmpty());
+        if (!busy) {
+            updateSendEnabled();
+        }
     }
 
-    // متن قابل‌نمایش کل گفتگو؛ اولین پیام کاربر (دستور پیش‌فرض توصیف تصویر) نشان داده نمی‌شود
-    private String renderConversation() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < conversationTurns.size(); i++) {
-            ChatTurn t = conversationTurns.get(i);
-            if (t.hasImage) {
+    // هر سوال و هر پاسخ به‌صورت یک ردیف جدا در فهرست نمایش داده می‌شود تا صفحه‌خوان بین آنها مکث کند؛
+    // اولین پیام کاربر فقط وقتی نشان داده می‌شود که خودش یک سوال واقعی بوده، نه دستور پیش‌فرض توصیف تصویر
+    private void refreshTurnsList() {
+        List<String> lines = new ArrayList<>();
+        String defaultPrompt = getString(R.string.prompt_describe);
+        for (ChatTurn t : conversationTurns) {
+            if (t.hasImage && defaultPrompt.equals(t.text)) {
                 continue;
             }
-            if (sb.length() > 0) {
-                sb.append("\n\n");
-            }
-            if ("assistant".equals(t.role)) {
-                sb.append(getString(R.string.chat_assistant_prefix)).append(t.text);
-            } else {
-                sb.append(getString(R.string.chat_you_prefix)).append(t.text);
-            }
+            String prefix = "assistant".equals(t.role)
+                    ? getString(R.string.chat_assistant_prefix)
+                    : getString(R.string.chat_you_prefix);
+            lines.add(prefix + t.text);
         }
-        return sb.toString();
+        turnsAdapter.clear();
+        turnsAdapter.addAll(lines);
+        turnsAdapter.notifyDataSetChanged();
+        updateSendEnabled();
     }
 
     private void onConversationReply(String replyText) {
         runOnUiThread(() -> {
             conversationTurns.add(new ChatTurn("assistant", replyText, false));
             pendingFollowUpQuestion = null;
-            tvStatus.setText(renderConversation());
+            refreshTurnsList();
+            tvStatus.setText(R.string.status_ready);
             setConversationBusy(false);
-            showFollowUpUi(true);
         });
     }
 
@@ -362,11 +380,13 @@ public class MainActivity extends AppCompatActivity {
                 // این شکست مربوط به یک سوال پیگیری بود؛ همان سوال را برمی‌گردانیم تا دوباره فرستاده شود
                 conversationTurns.remove(conversationTurns.size() - 1);
                 editQuestion.setText(pendingFollowUpQuestion);
-                tvStatus.setText(renderConversation());
+                refreshTurnsList();
+                tvStatus.setText(R.string.status_ready);
             } else {
                 // این شکست مربوط به توصیف اولیهٔ تصویر بود؛ کل گفتگو را کنار می‌گذاریم
                 conversationTurns.clear();
                 conversationImageBytes = null;
+                refreshTurnsList();
             }
             pendingFollowUpQuestion = null;
             setConversationBusy(false);
@@ -384,12 +404,25 @@ public class MainActivity extends AppCompatActivity {
         executor.execute(() -> {
             try {
                 ConversationStore.saveNewConversation(this, imageSnapshot, snapshot);
-                runOnUiThread(() -> Toast.makeText(this,
-                        R.string.conversation_saved, Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(this, R.string.conversation_saved, Toast.LENGTH_SHORT).show();
+                    resetToReadyState();
+                });
             } catch (Exception e) {
-                showError(getString(R.string.save_failed_prefix) + e.getMessage());
+                runOnUiThread(() -> showError(getString(R.string.save_failed_prefix) + e.getMessage()));
             }
         });
+    }
+
+    // بعد از ذخیره، سیستم را برای شروع یک گفتگوی تازه آماده می‌کند
+    private void resetToReadyState() {
+        conversationTurns.clear();
+        conversationImageBytes = null;
+        pendingAttachedImageBytes = null;
+        pendingFollowUpQuestion = null;
+        editQuestion.setText("");
+        refreshTurnsList();
+        refreshReadyState();
     }
 
     // کلیدهای واردشده برای یک سرویس مشخص را می‌خواند و خانه‌های خالی را کنار می‌گذارد
@@ -402,6 +435,20 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return keys;
+    }
+
+    private static byte[] readFileBytes(String path) {
+        try (FileInputStream fis = new FileInputStream(new File(path))) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = fis.read(buf)) != -1) {
+                out.write(buf, 0, n);
+            }
+            return out.toByteArray();
+        } catch (Exception e) {
+            return new byte[0];
+        }
     }
 
     // بر اساس سرویس فعال، درخواست کل گفتگو (شامل تاریخچه) را با قالب همان سرویس می‌فرستد

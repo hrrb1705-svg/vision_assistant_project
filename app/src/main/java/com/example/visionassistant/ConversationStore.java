@@ -63,11 +63,12 @@ public class ConversationStore {
             fos.write(imageBytes);
         }
 
+        String defaultPrompt = ctx.getString(R.string.prompt_describe);
         JSONArray messages = new JSONArray();
         for (ChatTurn t : turns) {
             // متن پیش‌فرض «این تصویر را توصیف کن» ذخیره نمی‌شود، چون خودکار است؛
-            // پاسخ دستیار و سوال‌های واقعی کاربر ذخیره می‌شوند
-            if (t.hasImage) {
+            // اگر کاربر خودش سوال اول را نوشته باشد، همان ذخیره می‌شود
+            if (t.hasImage && defaultPrompt.equals(t.text)) {
                 continue;
             }
             JSONObject m = new JSONObject();

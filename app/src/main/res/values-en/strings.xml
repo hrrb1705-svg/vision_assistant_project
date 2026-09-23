@@ -69,4 +69,17 @@
     <string name="quota_exceeded">The quota for this key is exhausted</string>
     <string name="invalid_key">This key is invalid</string>
     <string name="key_status_line_format">Key number %1$d: %2$s</string>
+
+    <string name="btn_attach">Attachments</string>
+    <string name="attach_screen_title">Add an image</string>
+    <string name="btn_attach_camera">Take photo with camera</string>
+    <string name="btn_attach_file">Choose file from device</string>
+    <string name="hint_ask_question_new">Type your question, or add an image with the Attachments button</string>
+    <string name="image_attached_status">Image attached. Press Send to start the conversation.</string>
+    <string name="need_image_first">First add an image using the Attachments button</string>
+    <string name="warn_replace_conversation_title">Replace current conversation</string>
+    <string name="warn_replace_conversation_message">The current conversation is unsaved and will be lost if you add a new image. Continue?</string>
+    <string name="select_blocks_hint">Double-tap any part of this conversation to include it when continuing</string>
+    <string name="error_need_question_or_image">Please enter a question or attach a new image</string>
+    <string name="btn_continue_conversation">Continue conversation with these parts</string>
 </resources>

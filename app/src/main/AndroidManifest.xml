@@ -42,5 +42,9 @@
             android:name=".ConversationViewActivity"
             android:label="@string/recent_conversations_title"
             android:exported="false" />
+        <activity
+            android:name=".AttachmentActivity"
+            android:label="@string/attach_screen_title"
+            android:exported="false" />
     </application>
 </manifest>

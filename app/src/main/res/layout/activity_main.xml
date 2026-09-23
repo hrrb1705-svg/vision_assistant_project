@@ -34,36 +34,31 @@
 
     </LinearLayout>
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
-        android:layout_width="1dp"
-        android:layout_height="1dp"
-        android:importantForAccessibility="no" />
+    <!-- پیام وضعیت کوتاه: آماده، در حال ارسال، یا تصویر افزوده شد -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:textSize="16sp"
+        android:accessibilityLiveRegion="polite"
+        android:text="@string/status_ready" />
 
-    <!-- با ScrollView کل متن گفتگو قابل دسترس است، حتی اگر طولانی‌تر از صفحه باشد -->
-    <ScrollView
+    <!-- هر سوال و هر پاسخ به‌صورت یک ردیف جدا، تا صفحه‌خوان بین آنها مکث کند -->
+    <ListView
+        android:id="@+id/listTurns"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:divider="?android:attr/listDivider"
+        android:dividerHeight="1dp" />
 
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textSize="16sp"
-            android:accessibilityLiveRegion="polite"
-            android:text="@string/status_ready" />
-    </ScrollView>
-
-    <!-- ردیف پرسش دربارهٔ تصویر: فقط وقتی یک گفتگو فعال باشد نمایش داده می‌شود -->
+    <!-- ردیف نوشتن سوال -->
     <LinearLayout
-        android:id="@+id/followUpRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="4dp"
-        android:visibility="gone">
+        android:padding="4dp">
 
         <EditText
             android:id="@+id/editQuestion"
@@ -73,14 +68,34 @@
             android:layout_margin="4dp"
             android:minHeight="48dp"
             android:inputType="textMultiLine|textCapSentences"
-            android:hint="@string/hint_ask_question" />
+            android:hint="@string/hint_ask_question_new" />
+
+    </LinearLayout>
+
+    <!-- ردیف پیوست تصویر و ارسال -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/btnAttach"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_attach" />
 
         <Button
             android:id="@+id/btnSend"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_margin="4dp"
-            android:minHeight="48dp"
+            android:minHeight="56dp"
+            android:enabled="false"
             android:text="@string/btn_send_question" />
 
     </LinearLayout>
@@ -94,42 +109,12 @@
         android:visibility="gone"
         android:text="@string/btn_save_conversation" />
 
-    <!-- کلیدهای اصلی برنامه: در پایین‌ترین خط صفحه، کنار هم -->
-    <LinearLayout
+    <Button
+        android:id="@+id/btnExit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="4dp">
-
-        <Button
-            android:id="@+id/btnCaptureCamera"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="4dp"
-            android:minHeight="56dp"
-            android:enabled="false"
-            android:text="@string/btn_capture_camera" />
-
-        <Button
-            android:id="@+id/btnChooseMedia"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="4dp"
-            android:minHeight="56dp"
-            android:enabled="false"
-            android:text="@string/btn_choose_media" />
-
-        <Button
-            android:id="@+id/btnExit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="4dp"
-            android:minHeight="56dp"
-            android:text="@string/btn_exit" />
-
-    </LinearLayout>
+        android:layout_margin="4dp"
+        android:minHeight="56dp"
+        android:text="@string/btn_exit" />
 
 </LinearLayout>

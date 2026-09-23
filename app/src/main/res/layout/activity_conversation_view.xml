@@ -15,25 +15,82 @@
     <ImageView
         android:id="@+id/ivConversationThumbnail"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
+        android:layout_height="120dp"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="4dp"
         android:adjustViewBounds="true"
         android:scaleType="fitCenter"
         android:contentDescription="@string/conversation_image_description" />
 
-    <ScrollView
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:textSize="14sp"
+        android:text="@string/select_blocks_hint" />
+
+    <ListView
+        android:id="@+id/listConversationTurns"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:choiceMode="multipleChoice"
+        android:divider="?android:attr/listDivider"
+        android:dividerHeight="1dp" />
 
-        <TextView
-            android:id="@+id/tvConversationTranscript"
-            android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvConversationStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:textSize="14sp"
+        android:accessibilityLiveRegion="polite" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <EditText
+            android:id="@+id/editContinueQuestion"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:textSize="16sp" />
-    </ScrollView>
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="48dp"
+            android:inputType="textMultiLine|textCapSentences"
+            android:hint="@string/hint_ask_question_new" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/btnContinueAttach"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_attach" />
+
+        <Button
+            android:id="@+id/btnContinueSend"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_continue_conversation" />
+
+    </LinearLayout>
 
 </LinearLayout>

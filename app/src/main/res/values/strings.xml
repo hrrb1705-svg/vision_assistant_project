@@ -69,4 +69,17 @@
     <string name="quota_exceeded">سهمیه این کلید تمام شده</string>
     <string name="invalid_key">این کلید نامعتبر است</string>
     <string name="key_status_line_format">کلید شماره %1$d: %2$s</string>
+
+    <string name="btn_attach">پیوست‌ها</string>
+    <string name="attach_screen_title">افزودن تصویر</string>
+    <string name="btn_attach_camera">گرفتن عکس با دوربین</string>
+    <string name="btn_attach_file">انتخاب فایل از حافظه گوشی</string>
+    <string name="hint_ask_question_new">سوالتان را بنویسید، یا با کلید پیوست‌ها تصویری اضافه کنید</string>
+    <string name="image_attached_status">تصویر افزوده شد. برای شروع گفتگو کلید ارسال را بزن</string>
+    <string name="need_image_first">ابتدا با کلید پیوست‌ها یک تصویر اضافه کن</string>
+    <string name="warn_replace_conversation_title">جایگزینی گفتگوی فعلی</string>
+    <string name="warn_replace_conversation_message">گفتگوی فعلی ذخیره نشده و با افزودن تصویر تازه از بین می‌رود. ادامه می‌دهی؟</string>
+    <string name="select_blocks_hint">برای انتخاب هر بخش از این گفتگو برای ادامه، دو ضربه روی آن بزن</string>
+    <string name="error_need_question_or_image">لطفاً یک سوال بنویس یا یک تصویر تازه اضافه کن</string>
+    <string name="btn_continue_conversation">ادامهٔ گفتگو با این بخش‌ها</string>
 </resources>
