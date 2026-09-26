@@ -24,7 +24,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConversationViewActivity extends AppCompatActivity {
+public class ConversationViewActivity extends BaseActivity {
 
     private ConversationStore.ConversationDetail detail;
     private String conversationId;
@@ -35,12 +35,6 @@ public class ConversationViewActivity extends AppCompatActivity {
     // اگر کاربر در همین صفحه تصویر تازه‌ای پیوست کند، به‌جای تصویر اصلی گفتگو همین استفاده می‌شود
     private String newAttachedImagePath = null;
     private ActivityResultLauncher<Intent> attachmentLauncher;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.wrap(newBase));
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

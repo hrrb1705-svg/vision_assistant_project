@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
 
 // صفحهٔ افزودن تصویر: یا با دوربین عکس می‌گیرد یا فایلی از گوشی انتخاب می‌کند،
 // و مسیر فایل موقت نتیجه را به صفحهٔ فراخواننده برمی‌گرداند
-public class AttachmentActivity extends AppCompatActivity {
+public class AttachmentActivity extends BaseActivity {
 
     public static final String RESULT_EXTRA_PATH = "attached_image_path";
     private static final int REQUEST_CAMERA_PERMISSION = 2001;
@@ -46,12 +46,6 @@ public class AttachmentActivity extends AppCompatActivity {
     private boolean captureQueued = false;
     private ActivityResultLauncher<String> pickFileLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.wrap(newBase));
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

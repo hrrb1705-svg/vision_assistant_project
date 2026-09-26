@@ -13,7 +13,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class ServicesActivity extends AppCompatActivity {
+public class ServicesActivity extends BaseActivity {
 
     private static final String[] PROVIDERS = {
             AppPrefs.PROVIDER_GOOGLE, AppPrefs.PROVIDER_GROQ, AppPrefs.PROVIDER_XAI, AppPrefs.PROVIDER_CUSTOM
@@ -30,12 +30,6 @@ public class ServicesActivity extends AppCompatActivity {
     private final String[] nameBuffer = new String[PROVIDERS.length];
     private final String[] endpointBuffer = new String[PROVIDERS.length];
     private int currentIndex = 0;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.wrap(newBase));
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

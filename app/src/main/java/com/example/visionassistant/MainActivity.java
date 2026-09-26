@@ -38,7 +38,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     // برای دریافت یک گفتگوی ادامه‌یافته از صفحهٔ ConversationViewActivity
     public static final String EXTRA_CONTINUE_IMAGE_PATH = "continue_image_path";
@@ -71,11 +71,6 @@ public class MainActivity extends AppCompatActivity {
     // اگر یک سوال پیگیری در حال ارسال باشد، متن آن اینجا نگه داشته می‌شود تا اگر شکست خورد به کاربر برگردانده شود
     private String pendingFollowUpQuestion = null;
     private boolean isBusy = false;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.wrap(newBase));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
