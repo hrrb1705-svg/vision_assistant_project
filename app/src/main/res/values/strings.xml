@@ -82,4 +82,15 @@
     <string name="select_blocks_hint">برای انتخاب هر بخش از این گفتگو برای ادامه، دو ضربه روی آن بزن</string>
     <string name="error_need_question_or_image">لطفاً یک سوال بنویس یا یک تصویر تازه اضافه کن</string>
     <string name="btn_continue_conversation">ادامهٔ گفتگو با این بخش‌ها</string>
+
+    <string name="camera_ready_hint">دوربین آماده است. برای عکس یا شروع ضبط ویدیو یکی از دو کلید را بزن</string>
+    <string name="btn_capture_now">ثبت عکس</string>
+    <string name="btn_record_video">ضبط ویدیوی کوتاه</string>
+    <string name="btn_stop_recording">پایان ضبط ویدیو</string>
+    <string name="btn_back">بازگشت</string>
+    <string name="recording_started">ضبط ویدیو شروع شد. برای پایان زودتر، دوباره کلید را بزن</string>
+    <string name="recording_stopped">ضبط ویدیو تمام شد</string>
+    <string name="video_not_supported_by_service">سرویس هوش مصنوعی فعال از ویدیو پشتیبانی نمی‌کند. سرویس گوگل را انتخاب کن یا به‌جای ویدیو عکس بگیر</string>
+    <string name="btn_play_video">پخش ویدیوی این گفتگو</string>
+    <string name="video_playback_no_app">برنامه‌ای برای پخش ویدیو روی گوشی پیدا نشد</string>
 </resources>

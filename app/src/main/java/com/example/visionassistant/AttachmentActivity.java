@@ -1,25 +1,32 @@
 package com.example.visionassistant;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.Recorder;
+import androidx.camera.video.Recording;
+import androidx.camera.video.VideoCapture;
+import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -31,60 +38,87 @@ import java.io.FileOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// صفحهٔ افزودن تصویر: یا با دوربین عکس می‌گیرد یا فایلی از گوشی انتخاب می‌کند،
-// و مسیر فایل موقت نتیجه را به صفحهٔ فراخواننده برمی‌گرداند
+// صفحهٔ افزودن تصویر یا ویدیو: یا با دوربین (با کنترل دست خودِ کاربر، نه فوری و خودکار)
+// عکس می‌گیرد یا یک ویدیوی کوتاه ضبط می‌کند، یا فایلی از گوشی انتخاب می‌کند
 public class AttachmentActivity extends BaseActivity {
 
     public static final String RESULT_EXTRA_PATH = "attached_image_path";
+    public static final String RESULT_EXTRA_MIME = "attached_image_mime";
     private static final int REQUEST_CAMERA_PERMISSION = 2001;
+    private static final long MAX_VIDEO_MILLIS = 8000; // ویدیو باید کوتاه بماند
 
     private PreviewView viewFinder;
+    private View groupChoice;
+    private View groupCamera;
     private Button btnAttachCamera;
     private Button btnAttachFile;
     private Button btnCancelAttach;
+    private Button btnCaptureNow;
+    private Button btnRecordVideo;
+    private Button btnBackFromCamera;
+    private TextView tvCameraHint;
+
     private ImageCapture imageCapture;
-    private boolean captureQueued = false;
+    private VideoCapture<Recorder> videoCapture;
+    private Recording activeRecording;
+    private boolean cameraReady = false;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private ActivityResultLauncher<String> pickFileLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attachment);
 
         viewFinder = findViewById(R.id.viewFinderAttach);
+        groupChoice = findViewById(R.id.groupChoice);
+        groupCamera = findViewById(R.id.groupCamera);
         btnAttachCamera = findViewById(R.id.btnAttachCamera);
         btnAttachFile = findViewById(R.id.btnAttachFile);
         btnCancelAttach = findViewById(R.id.btnCancelAttach);
+        btnCaptureNow = findViewById(R.id.btnCaptureNow);
+        btnRecordVideo = findViewById(R.id.btnRecordVideo);
+        btnBackFromCamera = findViewById(R.id.btnBackFromCamera);
+        tvCameraHint = findViewById(R.id.tvCameraHint);
 
         pickFileLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(), this::onFilePicked);
 
-        btnAttachCamera.setOnClickListener(v -> onCameraButtonPressed());
+        btnAttachCamera.setOnClickListener(v -> openCameraPanel());
         btnAttachFile.setOnClickListener(v -> pickFileLauncher.launch("image/*"));
         btnCancelAttach.setOnClickListener(v -> finish());
-
-        if (hasCameraPermission()) {
-            startCamera();
-        }
+        btnCaptureNow.setOnClickListener(v -> captureFromCamera());
+        btnRecordVideo.setOnClickListener(v -> onRecordVideoPressed());
+        btnBackFromCamera.setOnClickListener(v -> closeCameraPanel());
     }
 
-    private boolean hasCameraPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void onCameraButtonPressed() {
-        if (!hasCameraPermission()) {
+    // --- ورود به حالت دوربین: اول اجازه می‌گیرد، بعد کنترل عکس/ویدیو را نشان می‌دهد ---
+    private void openCameraPanel() {
+        if (!hasPermission(Manifest.permission.CAMERA)) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                    REQUEST_CAMERA_PERMISSION);
             return;
         }
-        if (imageCapture == null) {
-            captureQueued = true;
-            startCamera();
-            return;
+        groupChoice.setVisibility(View.GONE);
+        groupCamera.setVisibility(View.VISIBLE);
+        tvCameraHint.setText(R.string.camera_ready_hint);
+        startCamera();
+    }
+
+    private void closeCameraPanel() {
+        if (activeRecording != null) {
+            activeRecording.stop();
+            activeRecording = null;
         }
-        captureFromCamera();
+        groupCamera.setVisibility(View.GONE);
+        groupChoice.setVisibility(View.VISIBLE);
+    }
+
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(this, permission)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -92,8 +126,15 @@ public class AttachmentActivity extends BaseActivity {
                                             @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
+            boolean cameraGranted = false;
+            for (int i = 0; i < permissions.length; i++) {
+                if (Manifest.permission.CAMERA.equals(permissions[i])
+                        && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    cameraGranted = true;
+                }
+            }
+            if (cameraGranted) {
+                openCameraPanel();
             } else {
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.error_dialog_title)
@@ -112,81 +153,157 @@ public class AttachmentActivity extends BaseActivity {
                 Preview preview = new Preview.Builder().build();
                 preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
                 imageCapture = new ImageCapture.Builder().build();
+
+                Recorder recorder = new Recorder.Builder().build();
+                videoCapture = VideoCapture.withOutput(recorder);
+
                 provider.unbindAll();
                 provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview, imageCapture);
-                if (captureQueued) {
-                    captureQueued = false;
-                    captureFromCamera();
-                }
+                        preview, imageCapture, videoCapture);
+                cameraReady = true;
             } catch (Exception e) {
                 showError(getString(R.string.error_camera_start_prefix) + e.getMessage());
             }
         }, ContextCompat.getMainExecutor(this));
     }
 
+    // --- گرفتن عکس، فقط وقتی خود کاربر این کلید را بزند ---
     private void captureFromCamera() {
-        btnAttachCamera.setEnabled(false);
-        btnAttachFile.setEnabled(false);
-        Toast.makeText(this, R.string.capturing_image, Toast.LENGTH_SHORT).show();
+        if (!cameraReady || imageCapture == null) {
+            Toast.makeText(this, R.string.camera_not_ready, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        setCameraButtonsEnabled(false);
+        tvCameraHint.setText(R.string.capturing_image);
         imageCapture.takePicture(ContextCompat.getMainExecutor(this),
                 new ImageCapture.OnImageCapturedCallback() {
                     @Override
                     public void onCaptureSuccess(@NonNull ImageProxy image) {
                         byte[] bytes = ImageUtils.imageProxyToJpegBytes(image);
                         image.close();
-                        finishWithBytes(bytes);
+                        finishWithBytes(bytes, "image/jpeg");
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         runOnUiThread(() -> {
-                            btnAttachCamera.setEnabled(true);
-                            btnAttachFile.setEnabled(true);
+                            setCameraButtonsEnabled(true);
+                            tvCameraHint.setText(R.string.camera_ready_hint);
                             showError(getString(R.string.error_capture_prefix) + exception.getMessage());
                         });
                     }
                 });
     }
 
+    // --- ضبط یک ویدیوی کوتاه؛ با فشردن دوباره یا بعد از چند ثانیه خودش تمام می‌شود ---
+    private void onRecordVideoPressed() {
+        if (activeRecording != null) {
+            stopRecording();
+            return;
+        }
+        if (!cameraReady || videoCapture == null) {
+            Toast.makeText(this, R.string.camera_not_ready, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean hasAudio = hasPermission(Manifest.permission.RECORD_AUDIO);
+
+        File outFile = new File(getCacheDir(), "attach_" + System.currentTimeMillis() + ".mp4");
+        FileOutputOptions outputOptions = new FileOutputOptions.Builder(outFile).build();
+
+        androidx.camera.video.PendingRecording pending = videoCapture.getOutput()
+                .prepareRecording(this, outputOptions);
+        if (hasAudio) {
+            pending = pending.withAudioEnabled();
+        }
+
+        btnCaptureNow.setEnabled(false);
+        btnAttachFile.setEnabled(false);
+        btnRecordVideo.setText(R.string.btn_stop_recording);
+        tvCameraHint.setText(R.string.recording_started);
+
+        activeRecording = pending.start(ContextCompat.getMainExecutor(this), event -> {
+            if (event instanceof VideoRecordEvent.Finalize) {
+                VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
+                activeRecording = null;
+                handler.removeCallbacksAndMessages(null);
+                btnRecordVideo.setText(R.string.btn_record_video);
+                if (finalize.hasError()) {
+                    setCameraButtonsEnabled(true);
+                    tvCameraHint.setText(R.string.camera_ready_hint);
+                    showError(getString(R.string.error_capture_prefix) + finalize.getCause());
+                } else {
+                    tvCameraHint.setText(R.string.recording_stopped);
+                    readFileAndFinish(outFile, "video/mp4");
+                }
+            }
+        });
+
+        // ویدیو باید کوتاه بماند، پس بعد از مدت مشخصی خودش قطع می‌شود
+        handler.postDelayed(this::stopRecording, MAX_VIDEO_MILLIS);
+    }
+
+    private void stopRecording() {
+        if (activeRecording != null) {
+            activeRecording.stop();
+        }
+    }
+
+    private void setCameraButtonsEnabled(boolean enabled) {
+        btnCaptureNow.setEnabled(enabled);
+        btnRecordVideo.setEnabled(enabled);
+        btnAttachFile.setEnabled(enabled);
+    }
+
     private void onFilePicked(Uri uri) {
         if (uri == null) {
             return;
         }
-        btnAttachCamera.setEnabled(false);
-        btnAttachFile.setEnabled(false);
+        setCameraButtonsEnabled(false);
         Toast.makeText(this, R.string.capturing_image, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
             byte[] bytes = ImageUtils.fileUriToJpegBytes(this, uri);
-            finishWithBytes(bytes);
+            finishWithBytes(bytes, "image/jpeg");
         });
     }
 
-    private void finishWithBytes(byte[] bytes) {
+    private void finishWithBytes(byte[] bytes, String mime) {
         if (bytes == null || bytes.length == 0) {
             runOnUiThread(() -> {
-                btnAttachCamera.setEnabled(true);
-                btnAttachFile.setEnabled(true);
+                setCameraButtonsEnabled(true);
                 showError(getString(R.string.empty_image));
             });
             return;
         }
         try {
-            File outFile = new File(getCacheDir(), "attach_" + System.currentTimeMillis() + ".jpg");
+            String ext = "video/mp4".equals(mime) ? ".mp4" : ".jpg";
+            File outFile = new File(getCacheDir(), "attach_" + System.currentTimeMillis() + ext);
             try (FileOutputStream fos = new FileOutputStream(outFile)) {
                 fos.write(bytes);
             }
-            Intent result = new Intent();
-            result.putExtra(RESULT_EXTRA_PATH, outFile.getAbsolutePath());
-            setResult(RESULT_OK, result);
-            runOnUiThread(this::finish);
+            returnResult(outFile, mime);
         } catch (Exception e) {
             runOnUiThread(() -> {
-                btnAttachCamera.setEnabled(true);
-                btnAttachFile.setEnabled(true);
+                setCameraButtonsEnabled(true);
                 showError(getString(R.string.generic_error_prefix) + e.getMessage());
             });
         }
+    }
+
+    private void readFileAndFinish(File file, String mime) {
+        if (!file.exists() || file.length() == 0) {
+            setCameraButtonsEnabled(true);
+            showError(getString(R.string.empty_image));
+            return;
+        }
+        returnResult(file, mime);
+    }
+
+    private void returnResult(File file, String mime) {
+        Intent result = new Intent();
+        result.putExtra(RESULT_EXTRA_PATH, file.getAbsolutePath());
+        result.putExtra(RESULT_EXTRA_MIME, mime);
+        setResult(RESULT_OK, result);
+        runOnUiThread(this::finish);
     }
 
     private void showError(String message) {
@@ -200,6 +317,10 @@ public class AttachmentActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (activeRecording != null) {
+            activeRecording.stop();
+        }
+        handler.removeCallbacksAndMessages(null);
         executor.shutdown();
     }
 }

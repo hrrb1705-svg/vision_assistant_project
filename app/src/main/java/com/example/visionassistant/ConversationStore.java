@@ -35,11 +35,13 @@ public class ConversationStore {
     public static class ConversationDetail {
         public final String title;
         public final String imagePath; // ممکن است null باشد
+        public final String imageMime; // "image/jpeg" یا "video/mp4"
         public final List<ChatTurn> turns;
 
-        public ConversationDetail(String title, String imagePath, List<ChatTurn> turns) {
+        public ConversationDetail(String title, String imagePath, String imageMime, List<ChatTurn> turns) {
             this.title = title;
             this.imagePath = imagePath;
+            this.imageMime = imageMime;
             this.turns = turns;
         }
     }
@@ -52,13 +54,15 @@ public class ConversationStore {
         return d;
     }
 
-    // یک گفتگوی تازه را با عکس آن ذخیره می‌کند و شناسهٔ آن را برمی‌گرداند
-    public static String saveNewConversation(Context ctx, byte[] imageBytes, List<ChatTurn> turns) throws Exception {
+    // یک گفتگوی تازه را با عکس یا ویدیوی آن ذخیره می‌کند و شناسهٔ آن را برمی‌گرداند
+    public static String saveNewConversation(Context ctx, byte[] imageBytes, String imageMime,
+                                              List<ChatTurn> turns) throws Exception {
         long timestamp = System.currentTimeMillis();
         String id = String.valueOf(timestamp);
         String defaultTitle = defaultTitleFor(timestamp);
 
-        File imageFile = new File(dir(ctx), "img_" + id + ".jpg");
+        String ext = "video/mp4".equals(imageMime) ? ".mp4" : ".jpg";
+        File imageFile = new File(dir(ctx), "img_" + id + ext);
         try (FileOutputStream fos = new FileOutputStream(imageFile)) {
             fos.write(imageBytes);
         }
@@ -82,6 +86,7 @@ public class ConversationStore {
         root.put("title", defaultTitle);
         root.put("timestamp", timestamp);
         root.put("image", imageFile.getName());
+        root.put("imageMime", imageMime == null ? "image/jpeg" : imageMime);
         root.put("messages", messages);
 
         File jsonFile = new File(dir(ctx), id + ".json");
@@ -118,6 +123,7 @@ public class ConversationStore {
         String title = root.optString("title", "");
 
         String imageName = root.optString("image", "");
+        String imageMime = root.optString("imageMime", "image/jpeg");
         String imagePath = null;
         if (!imageName.isEmpty()) {
             File img = new File(dir(ctx), imageName);
@@ -134,7 +140,7 @@ public class ConversationStore {
                 turns.add(new ChatTurn(m.getString("role"), m.getString("text"), false));
             }
         }
-        return new ConversationDetail(title, imagePath, turns);
+        return new ConversationDetail(title, imagePath, imageMime, turns);
     }
 
     public static void renameConversation(Context ctx, String id, String newTitle) throws Exception {

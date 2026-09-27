@@ -23,6 +23,17 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/conversation_image_description" />
 
+    <Button
+        android:id="@+id/btnPlayVideo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="4dp"
+        android:minHeight="48dp"
+        android:visibility="gone"
+        android:text="@string/btn_play_video" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

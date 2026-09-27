@@ -82,4 +82,15 @@
     <string name="select_blocks_hint">Double-tap any part of this conversation to include it when continuing</string>
     <string name="error_need_question_or_image">Please enter a question or attach a new image</string>
     <string name="btn_continue_conversation">Continue conversation with these parts</string>
+
+    <string name="camera_ready_hint">Camera ready. Press one of the two buttons to take a photo or start recording video</string>
+    <string name="btn_capture_now">Take photo</string>
+    <string name="btn_record_video">Record short video</string>
+    <string name="btn_stop_recording">Stop recording</string>
+    <string name="btn_back">Back</string>
+    <string name="recording_started">Recording started. Press the button again to stop earlier</string>
+    <string name="recording_stopped">Recording finished</string>
+    <string name="video_not_supported_by_service">The active AI service does not support video. Choose the Google service, or take a photo instead</string>
+    <string name="btn_play_video">Play this conversation\'s video</string>
+    <string name="video_playback_no_app">No app found on this phone to play video</string>
 </resources>

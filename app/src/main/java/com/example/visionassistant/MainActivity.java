@@ -42,6 +42,7 @@ public class MainActivity extends BaseActivity {
 
     // برای دریافت یک گفتگوی ادامه‌یافته از صفحهٔ ConversationViewActivity
     public static final String EXTRA_CONTINUE_IMAGE_PATH = "continue_image_path";
+    public static final String EXTRA_CONTINUE_IMAGE_MIME = "continue_image_mime";
     public static final String EXTRA_CONTINUE_CONTEXT_JSON = "continue_context_json";
     public static final String EXTRA_CONTINUE_QUESTION = "continue_question";
 
@@ -66,8 +67,10 @@ public class MainActivity extends BaseActivity {
     // وضعیت گفتگوی جاری دربارهٔ یک تصویر؛ تا وقتی گفتگوی تازه‌ای شروع نشود همین‌جا می‌ماند
     private final List<ChatTurn> conversationTurns = new ArrayList<>();
     private byte[] conversationImageBytes = null;
+    private String conversationImageMime = "image/jpeg";
     // تصویری که با کلید پیوست‌ها انتخاب شده ولی هنوز گفتگویی با آن شروع نشده
     private byte[] pendingAttachedImageBytes = null;
+    private String pendingAttachedImageMime = "image/jpeg";
     // اگر یک سوال پیگیری در حال ارسال باشد، متن آن اینجا نگه داشته می‌شود تا اگر شکست خورد به کاربر برگردانده شود
     private String pendingFollowUpQuestion = null;
     private boolean isBusy = false;
@@ -131,9 +134,16 @@ public class MainActivity extends BaseActivity {
             return;
         }
         String imagePath = intent.getStringExtra(EXTRA_CONTINUE_IMAGE_PATH);
+        String imageMime = intent.getStringExtra(EXTRA_CONTINUE_IMAGE_MIME);
         String question = intent.getStringExtra(EXTRA_CONTINUE_QUESTION);
         String contextJson = intent.getStringExtra(EXTRA_CONTINUE_CONTEXT_JSON);
         if (imagePath == null || question == null) {
+            return;
+        }
+        String finalImageMime = (imageMime == null || imageMime.isEmpty()) ? "image/jpeg" : imageMime;
+
+        if (finalImageMime.startsWith("video/") && !AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this))) {
+            showError(getString(R.string.video_not_supported_by_service));
             return;
         }
 
@@ -159,6 +169,7 @@ public class MainActivity extends BaseActivity {
             runOnUiThread(() -> {
                 conversationTurns.clear();
                 conversationImageBytes = imageBytes;
+                conversationImageMime = finalImageMime;
                 pendingAttachedImageBytes = null;
                 conversationTurns.add(new ChatTurn("user", getString(R.string.prompt_describe), true));
                 conversationTurns.addAll(contextTurns);
@@ -237,18 +248,24 @@ public class MainActivity extends BaseActivity {
             return;
         }
         String path = result.getData().getStringExtra(AttachmentActivity.RESULT_EXTRA_PATH);
+        String mime = result.getData().getStringExtra(AttachmentActivity.RESULT_EXTRA_MIME);
         if (path == null) {
             return;
         }
+        String finalMime = (mime == null || mime.isEmpty()) ? "image/jpeg" : mime;
         executor.execute(() -> {
             byte[] bytes = readFileBytes(path);
-            runOnUiThread(() -> onImageAttached(bytes));
+            runOnUiThread(() -> onImageAttached(bytes, finalMime));
         });
     }
 
-    private void onImageAttached(byte[] bytes) {
+    private void onImageAttached(byte[] bytes, String mime) {
         if (bytes == null || bytes.length == 0) {
             showError(getString(R.string.empty_image));
+            return;
+        }
+        if (mime.startsWith("video/") && !AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this))) {
+            showError(getString(R.string.video_not_supported_by_service));
             return;
         }
         if (!conversationTurns.isEmpty()) {
@@ -257,17 +274,18 @@ public class MainActivity extends BaseActivity {
                     .setMessage(R.string.warn_replace_conversation_message)
                     .setPositiveButton(R.string.confirm_yes, (d, w) -> {
                         resetToReadyState();
-                        setPendingImage(bytes);
+                        setPendingImage(bytes, mime);
                     })
                     .setNegativeButton(R.string.confirm_no, null)
                     .show();
         } else {
-            setPendingImage(bytes);
+            setPendingImage(bytes, mime);
         }
     }
 
-    private void setPendingImage(byte[] bytes) {
+    private void setPendingImage(byte[] bytes, String mime) {
         pendingAttachedImageBytes = bytes;
+        pendingAttachedImageMime = mime;
         tvStatus.setText(R.string.image_attached_status);
         updateSendEnabled();
     }
@@ -281,8 +299,9 @@ public class MainActivity extends BaseActivity {
                 return;
             }
             byte[] imageBytes = pendingAttachedImageBytes;
+            String imageMime = pendingAttachedImageMime;
             pendingAttachedImageBytes = null;
-            startNewConversation(imageBytes, question);
+            startNewConversation(imageBytes, imageMime, question);
         } else {
             if (question.isEmpty()) {
                 return;
@@ -291,8 +310,8 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    // --- شروع یک گفتگوی تازه با یک عکس تازه و سوال اختیاری کاربر ---
-    private void startNewConversation(byte[] imageBytes, String questionText) {
+    // --- شروع یک گفتگوی تازه با یک عکس یا ویدیوی تازه و سوال اختیاری کاربر ---
+    private void startNewConversation(byte[] imageBytes, String imageMime, String questionText) {
         if (imageBytes.length == 0) {
             showError(getString(R.string.empty_image));
             refreshReadyState();
@@ -300,6 +319,7 @@ public class MainActivity extends BaseActivity {
         }
         conversationTurns.clear();
         conversationImageBytes = imageBytes;
+        conversationImageMime = imageMime;
         String firstText = questionText.isEmpty() ? getString(R.string.prompt_describe) : questionText;
         conversationTurns.add(new ChatTurn("user", firstText, true));
         pendingFollowUpQuestion = null;
@@ -381,6 +401,7 @@ public class MainActivity extends BaseActivity {
                 // این شکست مربوط به توصیف اولیهٔ تصویر بود؛ کل گفتگو را کنار می‌گذاریم
                 conversationTurns.clear();
                 conversationImageBytes = null;
+                conversationImageMime = "image/jpeg";
                 refreshTurnsList();
             }
             pendingFollowUpQuestion = null;
@@ -396,9 +417,10 @@ public class MainActivity extends BaseActivity {
         }
         List<ChatTurn> snapshot = new ArrayList<>(conversationTurns);
         byte[] imageSnapshot = conversationImageBytes;
+        String mimeSnapshot = conversationImageMime;
         executor.execute(() -> {
             try {
-                ConversationStore.saveNewConversation(this, imageSnapshot, snapshot);
+                ConversationStore.saveNewConversation(this, imageSnapshot, mimeSnapshot, snapshot);
                 runOnUiThread(() -> {
                     Toast.makeText(this, R.string.conversation_saved, Toast.LENGTH_SHORT).show();
                     resetToReadyState();
@@ -413,7 +435,9 @@ public class MainActivity extends BaseActivity {
     private void resetToReadyState() {
         conversationTurns.clear();
         conversationImageBytes = null;
+        conversationImageMime = "image/jpeg";
         pendingAttachedImageBytes = null;
+        pendingAttachedImageMime = "image/jpeg";
         pendingFollowUpQuestion = null;
         editQuestion.setText("");
         refreshTurnsList();
@@ -473,6 +497,7 @@ public class MainActivity extends BaseActivity {
         String finalUrl = url;
         List<ChatTurn> turnsSnapshot = new ArrayList<>(conversationTurns);
         byte[] imageBytes = conversationImageBytes;
+        String mediaMime = conversationImageMime;
 
         executor.execute(() -> {
             String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
@@ -487,7 +512,7 @@ public class MainActivity extends BaseActivity {
                         parts.put(new JSONObject().put("text", turn.text));
                         if (turn.hasImage) {
                             JSONObject inlineData = new JSONObject();
-                            inlineData.put("mime_type", "image/jpeg");
+                            inlineData.put("mime_type", mediaMime);
                             inlineData.put("data", base64);
                             parts.put(new JSONObject().put("inline_data", inlineData));
                         }
@@ -538,6 +563,10 @@ public class MainActivity extends BaseActivity {
 
     // قالب سازگار با OpenAI (messages / content)، برای Groq و هر سرویس دیگری که همین قالب رایج را پشتیبانی کند
     private void sendOpenAiCompatibleConversation(String provider) {
+        if (conversationImageMime != null && conversationImageMime.startsWith("video/")) {
+            onConversationFailed(getString(R.string.video_not_supported_by_service));
+            return;
+        }
         String endpoint = AppPrefs.getEndpoint(this, provider);
         String model = AppPrefs.getModel(this, provider);
         if (endpoint == null || endpoint.trim().isEmpty()
@@ -625,6 +654,10 @@ public class MainActivity extends BaseActivity {
 
     // قالب Responses API که Xai/Grok از آن استفاده می‌کند؛ با قالب OpenAI معمول (messages) فرق دارد
     private void sendXaiConversation() {
+        if (conversationImageMime != null && conversationImageMime.startsWith("video/")) {
+            onConversationFailed(getString(R.string.video_not_supported_by_service));
+            return;
+        }
         String provider = AppPrefs.PROVIDER_XAI;
         String endpoint = AppPrefs.getEndpoint(this, provider);
         String model = AppPrefs.getModel(this, provider);

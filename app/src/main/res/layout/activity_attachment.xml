@@ -19,28 +19,81 @@
         android:layout_height="1dp"
         android:importantForAccessibility="no" />
 
-    <Button
-        android:id="@+id/btnAttachCamera"
+    <!-- گروه اول: انتخاب دوربین یا فایل -->
+    <LinearLayout
+        android:id="@+id/groupChoice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="6dp"
-        android:minHeight="56dp"
-        android:text="@string/btn_attach_camera" />
+        android:orientation="vertical"
+        android:visibility="visible">
 
-    <Button
-        android:id="@+id/btnAttachFile"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="6dp"
-        android:minHeight="56dp"
-        android:text="@string/btn_attach_file" />
+        <Button
+            android:id="@+id/btnAttachCamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_attach_camera" />
 
-    <Button
-        android:id="@+id/btnCancelAttach"
+        <Button
+            android:id="@+id/btnAttachFile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_attach_file" />
+
+        <Button
+            android:id="@+id/btnCancelAttach"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/confirm_no" />
+
+    </LinearLayout>
+
+    <!-- گروه دوم: کنترل عکس و ویدیو، بعد از آماده شدن دوربین -->
+    <LinearLayout
+        android:id="@+id/groupCamera"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="6dp"
-        android:minHeight="56dp"
-        android:text="@string/confirm_no" />
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvCameraHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:textSize="16sp"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/camera_ready_hint" />
+
+        <Button
+            android:id="@+id/btnCaptureNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_capture_now" />
+
+        <Button
+            android:id="@+id/btnRecordVideo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_record_video" />
+
+        <Button
+            android:id="@+id/btnBackFromCamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_back" />
+
+    </LinearLayout>
 
 </LinearLayout>
