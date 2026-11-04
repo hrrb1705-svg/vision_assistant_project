@@ -44,6 +44,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="@string/base_url_label" />
+        <EditText
+            android:id="@+id/editBaseUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri"
+            android:contentDescription="@string/base_url_label"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/custom_endpoint_label" />
         <EditText
             android:id="@+id/editServiceEndpoint"
@@ -111,9 +123,26 @@
             android:layout_marginBottom="16dp" />
 
         <Button
+            android:id="@+id/btnTestKeys"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="@string/btn_test_keys" />
+
+        <TextView
+            android:id="@+id/tvTestStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:textSize="16sp"
+            android:accessibilityLiveRegion="polite" />
+
+        <Button
             android:id="@+id/btnSaveServices"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="56dp"
             android:text="@string/settings_save" />
 
     </LinearLayout>

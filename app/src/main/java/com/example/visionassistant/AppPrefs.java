@@ -41,6 +41,14 @@ public class AppPrefs {
         prefs(context).edit().putString(KEY_ACTIVE_PROVIDER, provider).apply();
     }
 
+    public static String getBaseUrl(Context context, String provider) {
+        return prefs(context).getString("baseurl_" + provider, "");
+    }
+
+    public static void setBaseUrl(Context context, String provider, String value) {
+        prefs(context).edit().putString("baseurl_" + provider, value).apply();
+    }
+
     public static String getEndpoint(Context context, String provider) {
         String saved = prefs(context).getString("endpoint_" + provider, "");
         if (!saved.isEmpty()) {

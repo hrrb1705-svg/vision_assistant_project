@@ -93,4 +93,12 @@
     <string name="video_not_supported_by_service">سرویس هوش مصنوعی فعال از ویدیو پشتیبانی نمی‌کند. سرویس گوگل را انتخاب کن یا به‌جای ویدیو عکس بگیر</string>
     <string name="btn_play_video">پخش ویدیوی این گفتگو</string>
     <string name="video_playback_no_app">برنامه‌ای برای پخش ویدیو روی گوشی پیدا نشد</string>
+
+    <string name="base_url_label">آدرس سرویس‌دهنده (مثلاً https://api.example.com/v1). اگر آدرس کامل درخواست را پایین‌تر ننویسی، از روی همین ساخته می‌شود</string>
+    <string name="btn_test_keys">آزمایش کلیدها</string>
+    <string name="test_in_progress">در حال آزمایش کلیدها…</string>
+    <string name="test_finished">آزمایش تمام شد</string>
+    <string name="test_dialog_title">نتیجهٔ آزمایش کلیدها</string>
+    <string name="test_key_ok">سالم است و پاسخ داد</string>
+    <string name="test_not_found">آدرس یا نام مدل پیدا نشد</string>
 </resources>
