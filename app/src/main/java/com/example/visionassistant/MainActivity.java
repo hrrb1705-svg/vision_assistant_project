@@ -46,7 +46,6 @@ public class MainActivity extends BaseActivity {
     public static final String EXTRA_CONTINUE_CONTEXT_JSON = "continue_context_json";
     public static final String EXTRA_CONTINUE_QUESTION = "continue_question";
 
-    private Button btnHelp;
     private Button btnMenu;
     private Button btnAttach;
     private Button btnExit;
@@ -80,7 +79,6 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnHelp = findViewById(R.id.btnHelp);
         btnMenu = findViewById(R.id.btnMenu);
         btnAttach = findViewById(R.id.btnAttach);
         btnExit = findViewById(R.id.btnExit);
@@ -99,8 +97,6 @@ public class MainActivity extends BaseActivity {
         btnAttach.setOnClickListener(v ->
                 attachmentLauncher.launch(new Intent(this, AttachmentActivity.class)));
         btnExit.setOnClickListener(v -> confirmExit());
-        btnHelp.setOnClickListener(v ->
-                startActivity(new Intent(this, HelpActivity.class)));
         btnMenu.setOnClickListener(v ->
                 startActivity(new Intent(this, MenuActivity.class)));
         btnSend.setOnClickListener(v -> onSendClicked());
@@ -235,6 +231,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void showError(String message) {
+        ErrorLog.add(this, message);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.error_dialog_title)
                 .setMessage(message)

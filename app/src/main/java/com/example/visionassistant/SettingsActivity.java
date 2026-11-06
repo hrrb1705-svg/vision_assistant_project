@@ -18,6 +18,8 @@ public class SettingsActivity extends BaseActivity {
 
         btnOpenLanguage.setOnClickListener(v ->
                 startActivity(new Intent(this, LanguageActivity.class)));
+        findViewById(R.id.btnOpenErrors).setOnClickListener(v ->
+                startActivity(new Intent(this, ErrorLogActivity.class)));
         btnOpenServices.setOnClickListener(v ->
                 startActivity(new Intent(this, ServicesActivity.class)));
     }

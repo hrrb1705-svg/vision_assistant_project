@@ -201,6 +201,10 @@ public class ServicesActivity extends BaseActivity {
             List<String> lines = new ArrayList<>();
             for (int i = 0; i < keys.size(); i++) {
                 String result = KeyTester.test(this, provider, endpoint, model, keys.get(i));
+                if (!getString(R.string.test_key_ok).equals(result)) {
+                    ErrorLog.add(getApplicationContext(), String.format(getString(R.string.key_status_line_format),
+                            numbers.get(i), result));
+                }
                 lines.add(String.format(getString(R.string.key_status_line_format),
                         numbers.get(i), result));
             }

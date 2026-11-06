@@ -101,4 +101,10 @@
     <string name="test_dialog_title">نتیجهٔ آزمایش کلیدها</string>
     <string name="test_key_ok">سالم است و پاسخ داد</string>
     <string name="test_not_found">آدرس یا نام مدل پیدا نشد</string>
+    <string name="settings_menu_errors">خطاها</string>
+    <string name="errors_title">خطاها</string>
+    <string name="errors_empty">هنوز خطایی ثبت نشده است</string>
+    <string name="errors_copy_all">کپی همهٔ خطاها</string>
+    <string name="errors_clear_all">حذف همهٔ خطاها</string>
+    <string name="errors_copied">خطاها کپی شد</string>
 </resources>

@@ -38,6 +38,14 @@
         android:layout_weight="1" />
 
     <Button
+        android:id="@+id/btnHelpFromMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:minHeight="56dp"
+        android:text="@string/btn_help" />
+
+    <Button
         android:id="@+id/btnSettingsFromMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

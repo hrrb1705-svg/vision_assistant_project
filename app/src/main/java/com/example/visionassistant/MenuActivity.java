@@ -21,6 +21,7 @@ public class MenuActivity extends BaseActivity {
     private ListView listConversations;
     private TextView tvNoConversations;
     private Button btnSettingsFromMenu;
+    private Button btnHelpFromMenu;
     private final List<ConversationStore.ConversationMeta> currentItems = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +31,10 @@ public class MenuActivity extends BaseActivity {
         listConversations = findViewById(R.id.listConversations);
         tvNoConversations = findViewById(R.id.tvNoConversations);
         btnSettingsFromMenu = findViewById(R.id.btnSettingsFromMenu);
+        btnHelpFromMenu = findViewById(R.id.btnHelpFromMenu);
+
+        btnHelpFromMenu.setOnClickListener(v ->
+                startActivity(new Intent(this, HelpActivity.class)));
 
         btnSettingsFromMenu.setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));

@@ -307,6 +307,7 @@ public class AttachmentActivity extends BaseActivity {
     }
 
     private void showError(String message) {
+        ErrorLog.add(this, message);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.error_dialog_title)
                 .setMessage(message)
