@@ -111,4 +111,9 @@
     <string name="setting_video_full">ارسال کل ویدیو (فقط گوگل؛ در غیر این صورت فریم‌های جدا)</string>
     <string name="setting_video_interval">فاصله فریم‌ها به ثانیه</string>
     <string name="preparing_frames">در حال آماده‌سازی فریم‌ها</string>
+    <string name="btn_pause_recording">مکث ضبط</string>
+    <string name="btn_resume_recording">ادامه ضبط</string>
+    <string name="btn_start_recording">شروع ضبط</string>
+    <string name="processing_video">در حال پردازش ویدیو</string>
+    <string name="summary_instruction">در ابتدا یک خلاصهٔ کوتاه و مختصر بده، سپس در صورت نیاز جزئیات را بگو.</string>
 </resources>

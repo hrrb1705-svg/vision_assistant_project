@@ -111,4 +111,9 @@
     <string name="setting_video_full">Send whole video (Google only; otherwise separate frames)</string>
     <string name="setting_video_interval">Frame interval in seconds</string>
     <string name="preparing_frames">Preparing frames</string>
+    <string name="btn_pause_recording">Pause recording</string>
+    <string name="btn_resume_recording">Resume recording</string>
+    <string name="btn_start_recording">Start recording</string>
+    <string name="processing_video">Processing video</string>
+    <string name="summary_instruction">Start with a short, concise summary, then add details only if needed.</string>
 </resources>

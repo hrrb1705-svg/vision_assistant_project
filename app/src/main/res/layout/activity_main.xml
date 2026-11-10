@@ -67,49 +67,46 @@
 
     </LinearLayout>
 
-    <!-- ردیف پیوست تصویر و ارسال -->
-    <LinearLayout
+    <!-- همهٔ دکمه‌ها در یک ردیف؛ اگر جا نشد، ردیف‌های اضافه از پایین به بالا ساخته می‌شوند -->
+    <com.example.visionassistant.WrapRowLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:padding="4dp">
 
         <Button
             android:id="@+id/btnAttach"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_margin="4dp"
             android:minHeight="56dp"
             android:text="@string/btn_attach" />
 
         <Button
             android:id="@+id/btnSend"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_margin="4dp"
             android:minHeight="56dp"
             android:enabled="false"
             android:text="@string/btn_send_question" />
 
-    </LinearLayout>
+        <Button
+            android:id="@+id/btnSaveConversation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:visibility="gone"
+            android:text="@string/btn_save_conversation" />
 
-    <Button
-        android:id="@+id/btnSaveConversation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="4dp"
-        android:minHeight="48dp"
-        android:visibility="gone"
-        android:text="@string/btn_save_conversation" />
+        <Button
+            android:id="@+id/btnExit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:minHeight="56dp"
+            android:text="@string/btn_exit" />
 
-    <Button
-        android:id="@+id/btnExit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="4dp"
-        android:minHeight="56dp"
-        android:text="@string/btn_exit" />
+    </com.example.visionassistant.WrapRowLayout>
 
 </LinearLayout>

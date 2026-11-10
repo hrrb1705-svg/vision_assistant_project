@@ -78,6 +78,22 @@
             android:minHeight="56dp"
             android:text="@string/btn_capture_now" />
 
+        <EditText
+            android:id="@+id/edtRecInterval"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:hint="@string/setting_video_interval"
+            android:contentDescription="@string/setting_video_interval"
+            android:inputType="number" />
+
+        <CheckBox
+            android:id="@+id/chkRecFull"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="@string/setting_video_full" />
+
         <Button
             android:id="@+id/btnRecordVideo"
             android:layout_width="match_parent"
@@ -85,6 +101,24 @@
             android:layout_margin="6dp"
             android:minHeight="56dp"
             android:text="@string/btn_record_video" />
+
+        <Button
+            android:id="@+id/btnPauseRecording"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:enabled="false"
+            android:text="@string/btn_pause_recording" />
+
+        <Button
+            android:id="@+id/btnStopRecording"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:minHeight="56dp"
+            android:enabled="false"
+            android:text="@string/btn_stop_recording" />
 
         <Button
             android:id="@+id/btnBackFromCamera"

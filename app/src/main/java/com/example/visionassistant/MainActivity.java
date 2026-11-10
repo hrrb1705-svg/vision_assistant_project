@@ -58,9 +58,9 @@ public class MainActivity extends BaseActivity {
     private ActivityResultLauncher<Intent> attachmentLauncher;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .connectTimeout(40, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
             .build();
 
     // وضعیت گفتگوی جاری دربارهٔ یک تصویر؛ تا وقتی گفتگوی تازه‌ای شروع نشود همین‌جا می‌ماند
@@ -321,6 +321,9 @@ public class MainActivity extends BaseActivity {
         conversationImageBytes = imageBytes;
         conversationImageMime = imageMime;
         String firstText = questionText.isEmpty() ? getString(R.string.prompt_describe) : questionText;
+        if (!AppPrefs.isSummarySkipped(this)) {
+            firstText = firstText + "\n" + getString(R.string.summary_instruction);
+        }
         conversationTurns.add(new ChatTurn("user", firstText, true));
         pendingFollowUpQuestion = null;
         editQuestion.setText("");

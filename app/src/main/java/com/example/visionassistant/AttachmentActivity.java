@@ -45,7 +45,6 @@ public class AttachmentActivity extends BaseActivity {
     public static final String RESULT_EXTRA_PATH = "attached_image_path";
     public static final String RESULT_EXTRA_MIME = "attached_image_mime";
     private static final int REQUEST_CAMERA_PERMISSION = 2001;
-    private static final long MAX_VIDEO_MILLIS = 8000; // ویدیو باید کوتاه بماند
 
     private PreviewView viewFinder;
     private View groupChoice;
@@ -57,6 +56,9 @@ public class AttachmentActivity extends BaseActivity {
     private Button btnRecordVideo;
     private Button btnBackFromCamera;
     private TextView tvCameraHint;
+    private Button btnPauseRecording;
+    private Button btnStopRecording;
+    private boolean paused = false;
 
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
@@ -81,6 +83,26 @@ public class AttachmentActivity extends BaseActivity {
         btnRecordVideo = findViewById(R.id.btnRecordVideo);
         btnBackFromCamera = findViewById(R.id.btnBackFromCamera);
         tvCameraHint = findViewById(R.id.tvCameraHint);
+        btnPauseRecording = findViewById(R.id.btnPauseRecording);
+        btnStopRecording = findViewById(R.id.btnStopRecording);
+        android.widget.EditText edtRec = findViewById(R.id.edtRecInterval);
+        android.widget.CheckBox chkRec = findViewById(R.id.chkRecFull);
+        edtRec.setText(String.valueOf(AppPrefs.getVideoIntervalSec(this)));
+        chkRec.setChecked(AppPrefs.isVideoFullMode(this));
+        chkRec.setOnCheckedChangeListener((b, c) -> AppPrefs.setVideoFullMode(this, c));
+        edtRec.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence x, int a, int b, int c) {}
+            public void onTextChanged(CharSequence x, int a, int b, int c) {}
+            public void afterTextChanged(android.text.Editable e) {
+                try { AppPrefs.setVideoIntervalSec(AttachmentActivity.this, Integer.parseInt(e.toString().trim())); } catch (Exception ignored) {}
+            }
+        });
+        btnPauseRecording.setOnClickListener(v -> {
+            if (activeRecording == null) return;
+            if (paused) { activeRecording.resume(); paused = false; btnPauseRecording.setText(R.string.btn_pause_recording); }
+            else { activeRecording.pause(); paused = true; btnPauseRecording.setText(R.string.btn_resume_recording); }
+        });
+        btnStopRecording.setOnClickListener(v -> stopRecording());
 
         pickFileLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(), this::onFilePicked);
@@ -198,7 +220,6 @@ public class AttachmentActivity extends BaseActivity {
     // --- ضبط یک ویدیوی کوتاه؛ با فشردن دوباره یا بعد از چند ثانیه خودش تمام می‌شود ---
     private void onRecordVideoPressed() {
         if (activeRecording != null) {
-            stopRecording();
             return;
         }
         if (!cameraReady || videoCapture == null) {
@@ -218,7 +239,10 @@ public class AttachmentActivity extends BaseActivity {
 
         btnCaptureNow.setEnabled(false);
         btnAttachFile.setEnabled(false);
-        btnRecordVideo.setText(R.string.btn_stop_recording);
+        btnRecordVideo.setEnabled(false);
+        btnPauseRecording.setEnabled(true);
+        btnStopRecording.setEnabled(true);
+        paused = false;
         tvCameraHint.setText(R.string.recording_started);
 
         activeRecording = pending.start(ContextCompat.getMainExecutor(this), event -> {
@@ -226,13 +250,15 @@ public class AttachmentActivity extends BaseActivity {
                 VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
                 activeRecording = null;
                 handler.removeCallbacksAndMessages(null);
-                btnRecordVideo.setText(R.string.btn_record_video);
+                btnRecordVideo.setText(R.string.btn_start_recording);
+                btnPauseRecording.setEnabled(false);
+                btnStopRecording.setEnabled(false);
                 if (finalize.hasError()) {
                     setCameraButtonsEnabled(true);
                     tvCameraHint.setText(R.string.camera_ready_hint);
                     showError(getString(R.string.error_capture_prefix) + finalize.getCause());
                 } else {
-                    tvCameraHint.setText(R.string.recording_stopped);
+                    tvCameraHint.setText(R.string.processing_video);
                     readFileAndFinish(outFile, "video/mp4");
                 }
             }
@@ -260,6 +286,21 @@ public class AttachmentActivity extends BaseActivity {
         setCameraButtonsEnabled(false);
         Toast.makeText(this, R.string.capturing_image, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
+            String type = getContentResolver().getType(uri);
+            if (type != null && type.startsWith("video/")) {
+                try {
+                    File vf = new File(getCacheDir(), "attach_" + System.currentTimeMillis() + ".mp4");
+                    try (java.io.InputStream in = getContentResolver().openInputStream(uri);
+                         FileOutputStream fos = new FileOutputStream(vf)) {
+                        byte[] buf = new byte[65536]; int n;
+                        while ((n = in.read(buf)) > 0) fos.write(buf, 0, n);
+                    }
+                    readFileAndFinish(vf, "video/mp4");
+                } catch (Exception e) {
+                    runOnUiThread(() -> { setCameraButtonsEnabled(true); showError(getString(R.string.generic_error_prefix) + e.getMessage()); });
+                }
+                return;
+            }
             byte[] bytes = ImageUtils.fileUriToJpegBytes(this, uri);
             finishWithBytes(bytes, "image/jpeg");
         });

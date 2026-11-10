@@ -19,9 +19,10 @@ import okhttp3.Response;
 public class KeyTester {
 
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(40, TimeUnit.SECONDS)
+            .writeTimeout(40, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build();
 
     // متن نتیجه برای یک کلید؛ اگر کلید سالم باشد پیام موفقیت برمی‌گردد
@@ -36,13 +37,21 @@ public class KeyTester {
                 request = buildOpenAi(endpoint, model, apiKey);
             }
 
-            try (Response response = CLIENT.newCall(request).execute()) {
-                String body = response.body() != null ? response.body().string() : "";
-                if (response.isSuccessful()) {
-                    return ctx.getString(R.string.test_key_ok);
+            Exception last = null;
+            for (int attempt = 0; attempt < 3; attempt++) {
+                try (Response response = CLIENT.newCall(request).execute()) {
+                    String body = response.body() != null ? response.body().string() : "";
+                    if (response.isSuccessful()) {
+                        return ctx.getString(R.string.test_key_ok);
+                    }
+                    if (response.code() >= 500 && attempt < 2) { Thread.sleep(1500); continue; }
+                    return describeHttpError(ctx, response.code(), body);
+                } catch (java.io.IOException io) {
+                    last = io;
+                    if (attempt < 2) Thread.sleep(2000);
                 }
-                return describeHttpError(ctx, response.code(), body);
             }
+            return ctx.getString(R.string.generic_error_prefix) + (last != null ? last.getMessage() : "");
         } catch (Exception e) {
             return ctx.getString(R.string.generic_error_prefix) + e.getMessage();
         }
