@@ -107,4 +107,8 @@
     <string name="errors_copy_all">Copy all errors</string>
     <string name="errors_clear_all">Delete all errors</string>
     <string name="errors_copied">Errors copied</string>
+    <string name="setting_skip_summary">Skip summary analysis (unchecked = summary is done)</string>
+    <string name="setting_video_full">Send whole video (Google only; otherwise separate frames)</string>
+    <string name="setting_video_interval">Frame interval in seconds</string>
+    <string name="preparing_frames">Preparing frames</string>
 </resources>

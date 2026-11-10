@@ -138,11 +138,6 @@ public class MainActivity extends BaseActivity {
         }
         String finalImageMime = (imageMime == null || imageMime.isEmpty()) ? "image/jpeg" : imageMime;
 
-        if (finalImageMime.startsWith("video/") && !AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this))) {
-            showError(getString(R.string.video_not_supported_by_service));
-            return;
-        }
-
         executor.execute(() -> {
             byte[] imageBytes = readFileBytes(imagePath);
             if (imageBytes.length == 0) {
@@ -261,8 +256,16 @@ public class MainActivity extends BaseActivity {
             showError(getString(R.string.empty_image));
             return;
         }
-        if (mime.startsWith("video/") && !AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this))) {
-            showError(getString(R.string.video_not_supported_by_service));
+        if (mime.startsWith("video/") && !(AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this)) && AppPrefs.isVideoFullMode(this))) {
+            tvStatus.setText(R.string.preparing_frames);
+            final byte[] vb = bytes;
+            executor.execute(() -> {
+                byte[] grid = MediaPrep.videoToGrid(this, vb, AppPrefs.getVideoIntervalSec(this));
+                runOnUiThread(() -> {
+                    if (grid == null) { showError(getString(R.string.empty_image)); }
+                    else { onImageAttached(grid, "image/jpeg"); }
+                });
+            });
             return;
         }
         if (!conversationTurns.isEmpty()) {

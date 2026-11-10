@@ -86,7 +86,7 @@ public class AttachmentActivity extends BaseActivity {
                 new ActivityResultContracts.GetContent(), this::onFilePicked);
 
         btnAttachCamera.setOnClickListener(v -> openCameraPanel());
-        btnAttachFile.setOnClickListener(v -> pickFileLauncher.launch("image/*"));
+        btnAttachFile.setOnClickListener(v -> pickFileLauncher.launch("*/*"));
         btnCancelAttach.setOnClickListener(v -> finish());
         btnCaptureNow.setOnClickListener(v -> captureFromCamera());
         btnRecordVideo.setOnClickListener(v -> onRecordVideoPressed());
@@ -239,7 +239,6 @@ public class AttachmentActivity extends BaseActivity {
         });
 
         // ویدیو باید کوتاه بماند، پس بعد از مدت مشخصی خودش قطع می‌شود
-        handler.postDelayed(this::stopRecording, MAX_VIDEO_MILLIS);
     }
 
     private void stopRecording() {

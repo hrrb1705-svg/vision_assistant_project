@@ -33,4 +33,25 @@
         android:layout_marginTop="8dp"
         android:text="@string/settings_menu_errors" />
 
+    <CheckBox
+        android:id="@+id/chkSkipSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/setting_skip_summary" />
+
+    <CheckBox
+        android:id="@+id/chkVideoFull"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/setting_video_full" />
+
+    <EditText
+        android:id="@+id/edtInterval"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/setting_video_interval"
+        android:contentDescription="@string/setting_video_interval"
+        android:inputType="number" />
+
 </LinearLayout>

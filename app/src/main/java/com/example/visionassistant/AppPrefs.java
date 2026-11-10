@@ -25,6 +25,13 @@ public class AppPrefs {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
+    public static boolean isSummarySkipped(Context c) { return prefs(c).getBoolean("summary_skipped", false); }
+    public static void setSummarySkipped(Context c, boolean v) { prefs(c).edit().putBoolean("summary_skipped", v).apply(); }
+    public static int getVideoIntervalSec(Context c) { return Math.max(1, prefs(c).getInt("video_interval_sec", 2)); }
+    public static void setVideoIntervalSec(Context c, int v) { prefs(c).edit().putInt("video_interval_sec", Math.max(1, v)).apply(); }
+    public static boolean isVideoFullMode(Context c) { return prefs(c).getBoolean("video_full_mode", false); }
+    public static void setVideoFullMode(Context c, boolean v) { prefs(c).edit().putBoolean("video_full_mode", v).apply(); }
+
     public static String getLanguage(Context context) {
         return prefs(context).getString(KEY_LANGUAGE, "fa");
     }

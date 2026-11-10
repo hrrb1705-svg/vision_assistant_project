@@ -107,4 +107,8 @@
     <string name="errors_copy_all">کپی همهٔ خطاها</string>
     <string name="errors_clear_all">حذف همهٔ خطاها</string>
     <string name="errors_copied">خطاها کپی شد</string>
+    <string name="setting_skip_summary">گذر از تحلیل خلاصه (اگر تیک نخورد، خلاصه انجام می‌شود)</string>
+    <string name="setting_video_full">ارسال کل ویدیو (فقط گوگل؛ در غیر این صورت فریم‌های جدا)</string>
+    <string name="setting_video_interval">فاصله فریم‌ها به ثانیه</string>
+    <string name="preparing_frames">در حال آماده‌سازی فریم‌ها</string>
 </resources>
