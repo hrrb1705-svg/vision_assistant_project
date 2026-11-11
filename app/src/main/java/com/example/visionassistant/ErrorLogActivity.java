@@ -47,7 +47,11 @@ public class ErrorLogActivity extends BaseActivity {
 
     private void reload() {
         List<String> all = ErrorLog.getAll(this);
-        listErrors.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, all));
+        List<String> rows = new java.util.ArrayList<>();
+        for (String entry : all) {
+            rows.addAll(ParagraphRows.build(this, null, entry));
+        }
+        listErrors.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, rows));
         tvNoErrors.setVisibility(all.isEmpty() ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 }

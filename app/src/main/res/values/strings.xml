@@ -94,7 +94,7 @@
     <string name="btn_play_video">پخش ویدیوی این گفتگو</string>
     <string name="video_playback_no_app">برنامه‌ای برای پخش ویدیو روی گوشی پیدا نشد</string>
 
-    <string name="base_url_label">آدرس سرویس‌دهنده (مثلاً https://api.example.com/v1). اگر آدرس کامل درخواست را پایین‌تر ننویسی، از روی همین ساخته می‌شود</string>
+    <string name="base_url_label">آدرس پایه سرویس، مثلاً https://api.example.com/v1</string>
     <string name="btn_test_keys">آزمایش کلیدها</string>
     <string name="test_in_progress">در حال آزمایش کلیدها…</string>
     <string name="test_finished">آزمایش تمام شد</string>

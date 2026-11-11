@@ -34,6 +34,7 @@ public class ConversationViewActivity extends BaseActivity {
     private String conversationId;
     private ListView listTurns;
     private ArrayAdapter<String> turnsAdapter;
+    private List<Integer> rowTurn = new ArrayList<>();
     private EditText editContinueQuestion;
     private TextView tvConversationStatus;
     // اگر کاربر در همین صفحه تصویر یا ویدیوی تازه‌ای پیوست کند، به‌جای رسانهٔ اصلی گفتگو همین استفاده می‌شود
@@ -85,11 +86,17 @@ public class ConversationViewActivity extends BaseActivity {
             }
 
             List<String> lines = new ArrayList<>();
-            for (ChatTurn turn : detail.turns) {
+            rowTurn = new ArrayList<>();
+            for (int ti = 0; ti < detail.turns.size(); ti++) {
+                ChatTurn turn = detail.turns.get(ti);
                 String prefix = "assistant".equals(turn.role)
                         ? getString(R.string.chat_assistant_prefix)
                         : getString(R.string.chat_you_prefix);
-                lines.add(prefix + turn.text);
+                List<String> rows = ParagraphRows.build(this, prefix, turn.text);
+                for (int r = 0; r < rows.size(); r++) {
+                    lines.add(rows.get(r));
+                    rowTurn.add(ti);
+                }
             }
             turnsAdapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_list_item_multiple_choice, lines);
@@ -181,10 +188,14 @@ public class ConversationViewActivity extends BaseActivity {
                 : question;
 
         SparseBooleanArray checked = listTurns.getCheckedItemPositions();
+        boolean[] turnChecked = new boolean[detail.turns.size()];
+        for (int r = 0; r < rowTurn.size(); r++) {
+            if (checked.get(r)) turnChecked[rowTurn.get(r)] = true;
+        }
         JSONArray contextArray = new JSONArray();
         try {
             for (int i = 0; i < detail.turns.size(); i++) {
-                if (checked.get(i)) {
+                if (turnChecked[i]) {
                     ChatTurn t = detail.turns.get(i);
                     JSONObject m = new JSONObject();
                     m.put("role", t.role);

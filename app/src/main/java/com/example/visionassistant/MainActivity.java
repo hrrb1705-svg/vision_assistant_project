@@ -374,7 +374,7 @@ public class MainActivity extends BaseActivity {
             String prefix = "assistant".equals(t.role)
                     ? getString(R.string.chat_assistant_prefix)
                     : getString(R.string.chat_you_prefix);
-            lines.add(prefix + t.text);
+            lines.addAll(ParagraphRows.build(this, prefix, t.text));
         }
         turnsAdapter.clear();
         turnsAdapter.addAll(lines);
