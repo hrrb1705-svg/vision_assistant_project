@@ -10,6 +10,25 @@ import java.util.Locale;
 // متن‌های خیلی بلند هم در مرز جمله به چند ردیف شماره‌دار شکسته می‌شوند.
 public class ParagraphRows {
 
+    // پاسخ مدل را به متن ساده تبدیل می‌کند: حذف علامت‌های مارک‌دان (ستاره، #، بک‌تیک، جدول و …)
+    public static String plain(String text) {
+        if (text == null) return "";
+        String t = text.replace("\r", "");
+        t = t.replaceAll("(?m)^\\s*[-*_]{3,}\\s*$", "");          // خط جداکننده
+        t = t.replaceAll("(?m)^\\s*#{1,6}\\s*", "");               // سرتیتر
+        t = t.replaceAll("(?m)^\\s*>\\s?", "");                    // نقل‌قول
+        t = t.replaceAll("(?m)^\\s*[*+-]\\s+", "");                // بولت
+        t = t.replaceAll("!?\\[([^\\]]*)\\]\\([^)]*\\)", "$1");   // لینک و تصویر
+        t = t.replaceAll("(\\*\\*|__)(.+?)\\1", "$2");           // پررنگ
+        t = t.replaceAll("(?<![\\w*])[*_](?!\\s)(.+?)(?<!\\s)[*_](?![\\w*])", "$1"); // کج
+        t = t.replaceAll("`{1,3}", "");                               // بک‌تیک
+        t = t.replaceAll("(?m)^\\s*\\|?[-:| ]+\\|[-:| ]*$", "");     // خط جدول
+        t = t.replaceAll("\\s*\\|\\s*", " ، ");                     // ستون جدول
+        t = t.replaceAll("[*#_~]{1,}", "");                           // هر ستاره/# باقی‌مانده
+        t = t.replaceAll("\\n{3,}", "\n\n");
+        return t.trim();
+    }
+
     private static final int MAX_CHARS = 280;
 
     // پیشوند: شماره پاراگراف (با ارقام فارسی در زبان fa)، و پیشوند اختیاری مثل «شما:» فقط روی ردیف اول

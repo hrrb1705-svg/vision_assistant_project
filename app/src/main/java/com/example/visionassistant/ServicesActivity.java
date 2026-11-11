@@ -25,7 +25,6 @@ public class ServicesActivity extends BaseActivity {
 
     private Spinner spinnerProvider;
     private EditText editServiceName;
-    private EditText editBaseUrl;
     private EditText editServiceEndpoint;
     private TextView labelKey1, labelKey2, labelKey3, labelKey4, labelKey5;
     private EditText editKey1, editKey2, editKey3, editKey4, editKey5;
@@ -36,7 +35,6 @@ public class ServicesActivity extends BaseActivity {
     // بافر موقت برای هر سرویس، تا وقتی کاربر بین آن‌ها جابه‌جا می‌شود، چیزی که تازه تایپ کرده از دست نرود
     private final String[][] keysBuffer = new String[PROVIDERS.length][5];
     private final String[] nameBuffer = new String[PROVIDERS.length];
-    private final String[] baseUrlBuffer = new String[PROVIDERS.length];
     private final String[] endpointBuffer = new String[PROVIDERS.length];
     private int currentIndex = 0;
 
@@ -47,7 +45,6 @@ public class ServicesActivity extends BaseActivity {
 
         spinnerProvider = findViewById(R.id.spinnerProvider);
         editServiceName = findViewById(R.id.editServiceName);
-        editBaseUrl = findViewById(R.id.editBaseUrl);
         editServiceEndpoint = findViewById(R.id.editServiceEndpoint);
         labelKey1 = findViewById(R.id.labelKey1);
         labelKey2 = findViewById(R.id.labelKey2);
@@ -76,7 +73,6 @@ public class ServicesActivity extends BaseActivity {
         for (int i = 0; i < PROVIDERS.length; i++) {
             String provider = PROVIDERS[i];
             nameBuffer[i] = AppPrefs.getModel(this, provider);
-            baseUrlBuffer[i] = AppPrefs.getBaseUrl(this, provider);
             endpointBuffer[i] = AppPrefs.getEndpoint(this, provider);
             for (int k = 0; k < 5; k++) {
                 keysBuffer[i][k] = AppPrefs.getApiKey(this, provider, k + 1);
@@ -117,7 +113,6 @@ public class ServicesActivity extends BaseActivity {
 
     private void saveFieldsIntoBuffer(int index) {
         nameBuffer[index] = editServiceName.getText().toString();
-        baseUrlBuffer[index] = editBaseUrl.getText().toString();
         endpointBuffer[index] = editServiceEndpoint.getText().toString();
         keysBuffer[index][0] = editKey1.getText().toString();
         keysBuffer[index][1] = editKey2.getText().toString();
@@ -128,7 +123,6 @@ public class ServicesActivity extends BaseActivity {
 
     private void applyProviderUi(int index) {
         editServiceName.setText(nameBuffer[index]);
-        editBaseUrl.setText(baseUrlBuffer[index]);
         editServiceEndpoint.setText(endpointBuffer[index]);
         editKey1.setText(keysBuffer[index][0]);
         editKey2.setText(keysBuffer[index][1]);
@@ -154,15 +148,6 @@ public class ServicesActivity extends BaseActivity {
         String endpoint = endpointBuffer[index] == null ? "" : endpointBuffer[index].trim();
         if (!endpoint.isEmpty()) {
             return endpoint;
-        }
-        if (AppPrefs.PROVIDER_CUSTOM.equals(PROVIDERS[index])) {
-            String base = baseUrlBuffer[index] == null ? "" : baseUrlBuffer[index].trim();
-            if (!base.isEmpty()) {
-                if (base.endsWith("/")) {
-                    base = base.substring(0, base.length() - 1);
-                }
-                return base + "/chat/completions";
-            }
         }
         return "";
     }
@@ -235,7 +220,6 @@ public class ServicesActivity extends BaseActivity {
         for (int i = 0; i < PROVIDERS.length; i++) {
             String provider = PROVIDERS[i];
             AppPrefs.setModel(this, provider, nameBuffer[i] == null ? "" : nameBuffer[i].trim());
-            AppPrefs.setBaseUrl(this, provider, baseUrlBuffer[i] == null ? "" : baseUrlBuffer[i].trim());
             AppPrefs.setEndpoint(this, provider, effectiveEndpoint(i));
             for (int k = 0; k < 5; k++) {
                 String value = keysBuffer[i][k] == null ? "" : keysBuffer[i][k].trim();

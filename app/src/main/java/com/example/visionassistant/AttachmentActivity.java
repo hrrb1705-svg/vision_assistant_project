@@ -287,7 +287,10 @@ public class AttachmentActivity extends BaseActivity {
         Toast.makeText(this, R.string.capturing_image, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
             String type = getContentResolver().getType(uri);
-            if (type != null && type.startsWith("video/")) {
+            String lastSeg = uri.getLastPathSegment() == null ? "" : uri.getLastPathSegment().toLowerCase(java.util.Locale.ROOT);
+            boolean looksVideo = lastSeg.endsWith(".mp4") || lastSeg.endsWith(".mov") || lastSeg.endsWith(".3gp")
+                    || lastSeg.endsWith(".webm") || lastSeg.endsWith(".mkv");
+            if ((type != null && type.startsWith("video/")) || (type == null && looksVideo)) {
                 try {
                     File vf = new File(getCacheDir(), "attach_" + System.currentTimeMillis() + ".mp4");
                     try (java.io.InputStream in = getContentResolver().openInputStream(uri);

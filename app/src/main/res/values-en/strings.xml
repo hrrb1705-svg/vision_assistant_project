@@ -48,7 +48,7 @@
     <string name="generic_error_prefix">Error: </string>
     <string name="unknown_error">Unknown error</string>
     <string name="no_keys_message">No key has been entered in settings. Open settings from the menu and add at least one key.</string>
-    <string name="prompt_describe">Describe the objects and obstacles in this image briefly and usefully for a blind person.</string>
+    <string name="prompt_describe">Write the answer as plain text, without any markdown symbols (such as asterisks, #, separator lines or tables). Describe the objects and obstacles in this image briefly and usefully for a blind person.</string>
 
     <string name="settings_menu_language">Language</string>
     <string name="settings_menu_services">Services</string>
@@ -93,8 +93,6 @@
     <string name="video_not_supported_by_service">The active AI service does not support video. Choose the Google service, or take a photo instead</string>
     <string name="btn_play_video">Play this conversation\'s video</string>
     <string name="video_playback_no_app">No app found on this phone to play video</string>
-
-    <string name="base_url_label">Base address, for example https://api.example.com/v1</string>
     <string name="btn_test_keys">Test keys</string>
     <string name="test_in_progress">Testing keys…</string>
     <string name="test_finished">Test finished</string>
@@ -116,4 +114,5 @@
     <string name="btn_start_recording">Start recording</string>
     <string name="processing_video">Processing video</string>
     <string name="summary_instruction">Start with a short, concise summary, then add details only if needed.</string>
+    <string name="video_unusable">The selected video can't be processed. Try another file or save the video as MP4</string>
 </resources>

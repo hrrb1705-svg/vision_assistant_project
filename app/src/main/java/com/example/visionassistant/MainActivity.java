@@ -262,7 +262,7 @@ public class MainActivity extends BaseActivity {
             executor.execute(() -> {
                 byte[] grid = MediaPrep.videoToGrid(this, vb, AppPrefs.getVideoIntervalSec(this));
                 runOnUiThread(() -> {
-                    if (grid == null) { showError(getString(R.string.empty_image)); }
+                    if (grid == null) { showError(getString(R.string.video_unusable)); }
                     else { onImageAttached(grid, "image/jpeg"); }
                 });
             });
@@ -383,8 +383,9 @@ public class MainActivity extends BaseActivity {
     }
 
     private void onConversationReply(String replyText) {
+        String cleanText = ParagraphRows.plain(replyText);
         runOnUiThread(() -> {
-            conversationTurns.add(new ChatTurn("assistant", replyText, false));
+            conversationTurns.add(new ChatTurn("assistant", cleanText, false));
             pendingFollowUpQuestion = null;
             refreshTurnsList();
             tvStatus.setText(R.string.status_ready);

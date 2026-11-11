@@ -41,17 +41,6 @@
             android:contentDescription="@string/custom_model_label"
             android:importantForAutofill="no" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/base_url_label" />
-        <EditText
-            android:id="@+id/editBaseUrl"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textUri"
-            android:contentDescription="@string/base_url_label"
-            android:importantForAutofill="no" />
 
         <TextView
             android:layout_width="wrap_content"
