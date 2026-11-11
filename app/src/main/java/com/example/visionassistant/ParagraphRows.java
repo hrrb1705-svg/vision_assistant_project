@@ -29,6 +29,12 @@ public class ParagraphRows {
         return t.trim();
     }
 
+    // دستور ثابت برای پاسخ بدون مارک‌داون، به متن کاربر اضافه می‌شود
+    public static String withPlainHint(String role, String text) {
+        if (text == null || "assistant".equals(role)) return text;
+        return text + "\n\n(Reply in plain text only. Do not use markdown, asterisks, # headings, tables, emojis or decorative symbols.)";
+    }
+
     private static final int MAX_CHARS = 280;
 
     // پیشوند: شماره پاراگراف (با ارقام فارسی در زبان fa)، و پیشوند اختیاری مثل «شما:» فقط روی ردیف اول

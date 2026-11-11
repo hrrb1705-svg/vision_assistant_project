@@ -513,7 +513,7 @@ public class MainActivity extends BaseActivity {
                     JSONArray contents = new JSONArray();
                     for (ChatTurn turn : turnsSnapshot) {
                         JSONArray parts = new JSONArray();
-                        parts.put(new JSONObject().put("text", turn.text));
+                        parts.put(new JSONObject().put("text", ParagraphRows.withPlainHint(turn.role, turn.text)));
                         if (turn.hasImage) {
                             JSONObject inlineData = new JSONObject();
                             inlineData.put("mime_type", mediaMime);
@@ -609,11 +609,11 @@ public class MainActivity extends BaseActivity {
 
                             JSONObject textPart = new JSONObject();
                             textPart.put("type", "text");
-                            textPart.put("text", turn.text);
+                            textPart.put("text", ParagraphRows.withPlainHint(turn.role, turn.text));
 
                             message.put("content", new JSONArray().put(textPart).put(imagePart));
                         } else {
-                            message.put("content", turn.text);
+                            message.put("content", ParagraphRows.withPlainHint(turn.role, turn.text));
                         }
                         messages.put(message);
                     }
@@ -692,7 +692,7 @@ public class MainActivity extends BaseActivity {
                         boolean isAssistant = "assistant".equals(turn.role);
                         JSONObject textPart = new JSONObject();
                         textPart.put("type", isAssistant ? "output_text" : "input_text");
-                        textPart.put("text", turn.text);
+                        textPart.put("text", ParagraphRows.withPlainHint(turn.role, turn.text));
 
                         JSONArray content = new JSONArray().put(textPart);
                         if (turn.hasImage) {

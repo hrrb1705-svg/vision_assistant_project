@@ -114,5 +114,5 @@
     <string name="btn_start_recording">Start recording</string>
     <string name="processing_video">Processing video</string>
     <string name="summary_instruction">Start with a short, concise summary, then add details only if needed.</string>
-    <string name="video_unusable">The selected video can't be processed. Try another file or save the video as MP4</string>
+    <string name="video_unusable">The selected video can\'t be processed. Try another file or save the video as MP4</string>
 </resources>
