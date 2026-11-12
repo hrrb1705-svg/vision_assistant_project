@@ -348,10 +348,6 @@ public class MainActivity extends BaseActivity {
         return uri;
     }
 
-    private static String readResponseBody(Response r) throws java.io.IOException {
-        return r.body() == null ? "" : r.body().string();
-    }
-
     private void setPendingImage(byte[] bytes, String mime) {
         uploadedVideoUris.clear();
         pendingAttachedImageBytes = bytes;
