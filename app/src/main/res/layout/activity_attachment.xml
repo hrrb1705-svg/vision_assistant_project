@@ -87,12 +87,13 @@
             android:contentDescription="@string/setting_video_interval"
             android:inputType="number" />
 
-        <CheckBox
-            android:id="@+id/chkRecFull"
+        <Spinner
+            android:id="@+id/spnRecVideoMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="6dp"
-            android:text="@string/setting_video_full" />
+            android:minHeight="48dp"
+            android:contentDescription="@string/setting_video_full" />
 
         <Button
             android:id="@+id/btnRecordVideo"

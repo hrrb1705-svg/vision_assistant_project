@@ -256,7 +256,7 @@ public class MainActivity extends BaseActivity {
             showError(getString(R.string.empty_image));
             return;
         }
-        if (mime.startsWith("video/") && !(AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this)) && AppPrefs.isVideoFullMode(this))) {
+        if (mime.startsWith("video/") && !sendVideoRaw(bytes.length)) {
             tvStatus.setText(R.string.preparing_frames);
             final byte[] vb = bytes;
             executor.execute(() -> {
@@ -283,7 +283,77 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    private static final int INLINE_VIDEO_MAX = 14 * 1024 * 1024;
+
+    // آیا این ویدیو به‌صورت کامل (نه فریم) فرستاده شود؟ فقط برای گوگل
+    private boolean sendVideoRaw(int size) {
+        if (!AppPrefs.PROVIDER_GOOGLE.equals(AppPrefs.getActiveProvider(this))) return false;
+        int mode = AppPrefs.getVideoMode(this);
+        if (mode == AppPrefs.VIDEO_UPLOAD) return true;
+        return mode == AppPrefs.VIDEO_SMALL && size <= INLINE_VIDEO_MAX;
+    }
+
+    private final java.util.Map<String, String> uploadedVideoUris = new java.util.HashMap<>();
+
+    // آپلود با Files API گوگل (resumable) و انتظار تا آماده‌شدن فایل؛ آدرس فایل را برمی‌گرداند
+    private String uploadVideoToGoogle(String origin, String apiKey, byte[] data, String mime) throws Exception {
+        OkHttpClient up = httpClient.newBuilder()
+                .writeTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
+        JSONObject meta = new JSONObject().put("file", new JSONObject().put("display_name", "video"));
+        Request start = new Request.Builder()
+                .url(origin + "/upload/v1beta/files")
+                .header("x-goog-api-key", apiKey)
+                .header("X-Goog-Upload-Protocol", "resumable")
+                .header("X-Goog-Upload-Command", "start")
+                .header("X-Goog-Upload-Header-Content-Length", String.valueOf(data.length))
+                .header("X-Goog-Upload-Header-Content-Type", mime)
+                .post(RequestBody.create(meta.toString(), MediaType.parse("application/json")))
+                .build();
+        String uploadUrl;
+        try (Response r = up.newCall(start).execute()) {
+            if (!r.isSuccessful()) throw new Exception("upload start " + r.code() + ": " + readResponseBody(r));
+            uploadUrl = r.header("X-Goog-Upload-URL");
+            if (uploadUrl == null) throw new Exception("no upload url");
+        }
+        Request send = new Request.Builder()
+                .url(uploadUrl)
+                .header("X-Goog-Upload-Offset", "0")
+                .header("X-Goog-Upload-Command", "upload, finalize")
+                .post(RequestBody.create(data, MediaType.parse(mime)))
+                .build();
+        JSONObject file;
+        try (Response r = up.newCall(send).execute()) {
+            String body = readResponseBody(r);
+            if (!r.isSuccessful()) throw new Exception("upload " + r.code() + ": " + body);
+            file = new JSONObject(body).getJSONObject("file");
+        }
+        String name = file.getString("name");
+        String uri = file.getString("uri");
+        String state = file.optString("state", "ACTIVE");
+        for (int i = 0; i < 60 && "PROCESSING".equals(state); i++) {
+            Thread.sleep(2000);
+            Request poll = new Request.Builder()
+                    .url(origin + "/v1beta/" + name)
+                    .header("x-goog-api-key", apiKey)
+                    .build();
+            try (Response r = up.newCall(poll).execute()) {
+                String body = readResponseBody(r);
+                if (!r.isSuccessful()) throw new Exception("file state " + r.code() + ": " + body);
+                state = new JSONObject(body).optString("state", "ACTIVE");
+            }
+        }
+        if (!"ACTIVE".equals(state)) throw new Exception("video not ready: " + state);
+        return uri;
+    }
+
+    private static String readResponseBody(Response r) throws java.io.IOException {
+        return r.body() == null ? "" : r.body().string();
+    }
+
     private void setPendingImage(byte[] bytes, String mime) {
+        uploadedVideoUris.clear();
         pendingAttachedImageBytes = bytes;
         pendingAttachedImageMime = mime;
         tvStatus.setText(R.string.image_attached_status);
@@ -504,21 +574,40 @@ public class MainActivity extends BaseActivity {
         String mediaMime = conversationImageMime;
 
         executor.execute(() -> {
-            String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+            final boolean bigVideo = mediaMime != null && mediaMime.startsWith("video/")
+                    && imageBytes.length > INLINE_VIDEO_MAX;
+            String base64 = bigVideo ? "" : Base64.encodeToString(imageBytes, Base64.NO_WRAP);
             List<String> errorLines = new ArrayList<>();
+            String origin = finalUrl.replaceAll("^(https?://[^/]+).*$", "$1");
 
             for (int i = 0; i < apiKeys.size(); i++) {
                 String apiKey = apiKeys.get(i);
                 try {
+                    String fileUri = null;
+                    if (bigVideo) {
+                        fileUri = uploadedVideoUris.get(apiKey);
+                        if (fileUri == null) {
+                            runOnUiThread(() -> tvStatus.setText(R.string.uploading_video));
+                            fileUri = uploadVideoToGoogle(origin, apiKey, imageBytes, mediaMime);
+                            uploadedVideoUris.put(apiKey, fileUri);
+                        }
+                    }
                     JSONArray contents = new JSONArray();
                     for (ChatTurn turn : turnsSnapshot) {
                         JSONArray parts = new JSONArray();
                         parts.put(new JSONObject().put("text", ParagraphRows.withPlainHint(turn.role, turn.text)));
                         if (turn.hasImage) {
-                            JSONObject inlineData = new JSONObject();
-                            inlineData.put("mime_type", mediaMime);
-                            inlineData.put("data", base64);
-                            parts.put(new JSONObject().put("inline_data", inlineData));
+                            if (fileUri != null) {
+                                JSONObject fd = new JSONObject();
+                                fd.put("mime_type", mediaMime);
+                                fd.put("file_uri", fileUri);
+                                parts.put(new JSONObject().put("file_data", fd));
+                            } else {
+                                JSONObject inlineData = new JSONObject();
+                                inlineData.put("mime_type", mediaMime);
+                                inlineData.put("data", base64);
+                                parts.put(new JSONObject().put("inline_data", inlineData));
+                            }
                         }
                         JSONObject content = new JSONObject();
                         content.put("role", "assistant".equals(turn.role) ? "model" : "user");

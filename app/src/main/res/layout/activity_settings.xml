@@ -40,11 +40,17 @@
         android:layout_marginTop="12dp"
         android:text="@string/setting_skip_summary" />
 
-    <CheckBox
-        android:id="@+id/chkVideoFull"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/setting_video_full" />
+
+    <Spinner
+        android:id="@+id/spnVideoMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:contentDescription="@string/setting_video_full" />
 
     <EditText
         android:id="@+id/edtInterval"

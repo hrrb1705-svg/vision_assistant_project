@@ -86,10 +86,9 @@ public class AttachmentActivity extends BaseActivity {
         btnPauseRecording = findViewById(R.id.btnPauseRecording);
         btnStopRecording = findViewById(R.id.btnStopRecording);
         android.widget.EditText edtRec = findViewById(R.id.edtRecInterval);
-        android.widget.CheckBox chkRec = findViewById(R.id.chkRecFull);
+        android.widget.Spinner chkRec = findViewById(R.id.spnRecVideoMode);
         edtRec.setText(String.valueOf(AppPrefs.getVideoIntervalSec(this)));
-        chkRec.setChecked(AppPrefs.isVideoFullMode(this));
-        chkRec.setOnCheckedChangeListener((b, c) -> AppPrefs.setVideoFullMode(this, c));
+        VideoModeSpinner.bind(this, chkRec);
         edtRec.addTextChangedListener(new android.text.TextWatcher() {
             public void beforeTextChanged(CharSequence x, int a, int b, int c) {}
             public void onTextChanged(CharSequence x, int a, int b, int c) {}

@@ -23,13 +23,12 @@ public class SettingsActivity extends BaseActivity {
         findViewById(R.id.btnOpenErrors).setOnClickListener(v ->
                 startActivity(new Intent(this, ErrorLogActivity.class)));
         CheckBox skip = findViewById(R.id.chkSkipSummary);
-        CheckBox full = findViewById(R.id.chkVideoFull);
+        android.widget.Spinner full = findViewById(R.id.spnVideoMode);
         EditText edt = findViewById(R.id.edtInterval);
         skip.setChecked(AppPrefs.isSummarySkipped(this));
-        full.setChecked(AppPrefs.isVideoFullMode(this));
+        VideoModeSpinner.bind(this, full);
         edt.setText(String.valueOf(AppPrefs.getVideoIntervalSec(this)));
         skip.setOnCheckedChangeListener((b, c) -> AppPrefs.setSummarySkipped(this, c));
-        full.setOnCheckedChangeListener((b, c) -> AppPrefs.setVideoFullMode(this, c));
         edt.addTextChangedListener(new android.text.TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             public void onTextChanged(CharSequence s, int a, int b, int c) {}

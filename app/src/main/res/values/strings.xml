@@ -106,7 +106,7 @@
     <string name="errors_clear_all">حذف همهٔ خطاها</string>
     <string name="errors_copied">خطاها کپی شد</string>
     <string name="setting_skip_summary">گذر از تحلیل خلاصه (اگر تیک نخورد، خلاصه انجام می‌شود)</string>
-    <string name="setting_video_full">ارسال کل ویدیو (فقط گوگل؛ در غیر این صورت فریم‌های جدا)</string>
+    <string name="setting_video_full">روش ارسال ویدیو</string>
     <string name="setting_video_interval">فاصله فریم‌ها به ثانیه</string>
     <string name="preparing_frames">در حال آماده‌سازی فریم‌ها</string>
     <string name="btn_pause_recording">مکث ضبط</string>
@@ -115,4 +115,10 @@
     <string name="processing_video">در حال پردازش ویدیو</string>
     <string name="summary_instruction">در ابتدا یک خلاصهٔ کوتاه و مختصر بده، سپس در صورت نیاز جزئیات را بگو.</string>
     <string name="video_unusable">ویدیوی انتخابی قابل پردازش نیست. فایل دیگری را امتحان کن یا ویدیو را با فرمت mp4 ذخیره کن</string>
+    <string-array name="video_modes">
+        <item>فریم‌های جدا (پیش‌فرض)</item>
+        <item>ویدیوی کامل تا ۱۴ مگابایت، بیشتر از آن فریم (فقط گوگل)</item>
+        <item>ویدیوی کامل بدون فشرده‌سازی، با آپلود (فقط گوگل)</item>
+    </string-array>
+    <string name="uploading_video">در حال آپلود ویدیو…</string>
 </resources>

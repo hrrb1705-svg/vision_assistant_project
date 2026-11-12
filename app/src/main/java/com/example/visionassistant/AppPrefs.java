@@ -29,6 +29,12 @@ public class AppPrefs {
     public static void setSummarySkipped(Context c, boolean v) { prefs(c).edit().putBoolean("summary_skipped", v).apply(); }
     public static int getVideoIntervalSec(Context c) { return Math.max(1, prefs(c).getInt("video_interval_sec", 2)); }
     public static void setVideoIntervalSec(Context c, int v) { prefs(c).edit().putInt("video_interval_sec", Math.max(1, v)).apply(); }
+    public static final int VIDEO_FRAMES = 0, VIDEO_SMALL = 1, VIDEO_UPLOAD = 2;
+    public static int getVideoMode(Context c) {
+        if (prefs(c).contains("video_mode")) return prefs(c).getInt("video_mode", 0);
+        return prefs(c).getBoolean("video_full_mode", false) ? VIDEO_SMALL : VIDEO_FRAMES;
+    }
+    public static void setVideoMode(Context c, int v) { prefs(c).edit().putInt("video_mode", v).apply(); }
     public static boolean isVideoFullMode(Context c) { return prefs(c).getBoolean("video_full_mode", false); }
     public static void setVideoFullMode(Context c, boolean v) { prefs(c).edit().putBoolean("video_full_mode", v).apply(); }
 

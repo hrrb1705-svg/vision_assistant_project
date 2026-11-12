@@ -106,7 +106,7 @@
     <string name="errors_clear_all">Delete all errors</string>
     <string name="errors_copied">Errors copied</string>
     <string name="setting_skip_summary">Skip summary analysis (unchecked = summary is done)</string>
-    <string name="setting_video_full">Send whole video (Google only; otherwise separate frames)</string>
+    <string name="setting_video_full">Video sending method</string>
     <string name="setting_video_interval">Frame interval in seconds</string>
     <string name="preparing_frames">Preparing frames</string>
     <string name="btn_pause_recording">Pause recording</string>
@@ -115,4 +115,10 @@
     <string name="processing_video">Processing video</string>
     <string name="summary_instruction">Start with a short, concise summary, then add details only if needed.</string>
     <string name="video_unusable">The selected video can\'t be processed. Try another file or save the video as MP4</string>
+    <string-array name="video_modes">
+        <item>Separate frames (default)</item>
+        <item>Whole video up to 14 MB, frames if larger (Google only)</item>
+        <item>Whole video uncompressed, via upload (Google only)</item>
+    </string-array>
+    <string name="uploading_video">Uploading video…</string>
 </resources>
